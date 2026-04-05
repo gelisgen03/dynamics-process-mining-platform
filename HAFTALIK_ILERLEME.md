@@ -4,9 +4,9 @@
 
 | Alan | Bilgi |
 |------|-------|
-| **Öğrenci Adı Soyadı** | *(Adınızı yazın)* |
-| **Öğrenci No** | *(Numaranızı yazın)* |
-| **Proje Başlığı** | *(Proje başlığınızı yazın)* |
+| **Öğrenci Adı Soyadı** | Süleyman Asım Gelişgen |
+| **Öğrenci No** | 21360859086 |
+| **Proje Başlığı** | Microsoft Dynamics 365 Entegrasyonlu Süreç Madenciliği Tabanlı İş Süreci Analiz Platformu |
 | **Danışman** | Prof. Dr. Turgay Tugay Bilgin |
 | **Dönem** | 2025-2026 Bahar |
 
@@ -18,16 +18,16 @@
 
 | Hafta | Tarih Aralığı | Planlanan İş | Tahmini Tamamlanma (%) | Durum |
 |-------|---------------|--------------|------------------------|-------|
-| 1 | GG.AA - GG.AA | *(Planlanan işi yazın)* | %... | ⬜ Başlamadı |
-| 2 | GG.AA - GG.AA | | %... | ⬜ Başlamadı |
-| 3 | GG.AA - GG.AA | | %... | ⬜ Başlamadı |
-| 4 | GG.AA - GG.AA | | %... | ⬜ Başlamadı |
-| 5 | GG.AA - GG.AA | | %... | ⬜ Başlamadı |
-| 6 | GG.AA - GG.AA | | %... | ⬜ Başlamadı |
-| 7 | GG.AA - GG.AA | | %... | ⬜ Başlamadı |
-| 8 | GG.AA - GG.AA | | %... | ⬜ Başlamadı |
-| 9 | GG.AA - GG.AA | | %... | ⬜ Başlamadı |
-| 10 | GG.AA - GG.AA | | %... | ⬜ Başlamadı |
+| 1 | 06.04 - 12.04 | *(Planlanan işi yazın)* | %... | ⬜ Başlamadı |
+| 2 | 13.04 - 19.04 | | %... | ⬜ Başlamadı |
+| 3 | 27.04 - 03.05 | | %... | ⬜ Başlamadı |
+| 4 | 04.05 - 10.05 | | %... | ⬜ Başlamadı |
+| 5 | 11.05 - 17.05 | | %... | ⬜ Başlamadı |
+| 6 | 18.05 - 24.05 | | %... | ⬜ Başlamadı |
+| 7 | 01.06 - 07.06 | | %... | ⬜ Başlamadı |
+| 8 | 08.06 - 14.06 | | %... | ⬜ Başlamadı |
+| 9 | 15.06 - 21.06 | | %... | ⬜ Başlamadı |
+| 10 | 22.06 - 28.06 | | %... | ⬜ Başlamadı |
 
 **Durum simgeleri:** ⬜ Başlamadı | 🔄 Devam Ediyor | ✅ Tamamlandı | ⚠️ Gecikti
 
