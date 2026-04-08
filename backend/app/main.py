@@ -1,0 +1,1 @@
+#Bu dosyada tüm FastAPI kodunun başlangıç noktasıdır
