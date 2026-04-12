@@ -38,6 +38,30 @@
 > **Kullanım:** Her hafta aşağıdaki şablonu kopyalayıp doldurun. En güncel hafta en üstte olacak şekilde ekleyin.
 
 ---
+### Hafta 1 (Tarih: 06.04.2026 - 12.04.2026)
+
+**Plandaki hedef:**
+- Proje gereksinimlerinin belirlenmesi, süreç madenciliği kavramlarının araştırılması ve sistem mimarisinin tasarlanması.
+
+**Bu hafta yaptıklarım:**
+- Süreç madenciliği temel kavramları, kullanım alanları ve pm4py kütüphanesi üzerine detaylı literatür araştırması yapıldı.
+- Projenin ana gereksinimleri belirlendi: Backend için Python (FastAPI), frontend için ise React kullanılacak.
+- Sistem mimarisi, birbirinden bağımsız çalışacak backend ve frontend servisleri olarak tasarlandı.
+- Bu mimariye uygun olarak ana klasör yapısı (backend, frontend) oluşturuldu.
+- Frontend projesi Vite kullanılarak oluşturuldu ve temel bağımlılıkları kuruldu.
+- Backend için Python sanal ortamı (venv) hazırlanarak projenin altyapı kurulumuna başlandı.
+
+**Plana göre durumum:**
+- Bu haftanın hedefleri başarıyla tamamlanmıştır. Planın ilerisindeyim; sistem mimarisinin tasarlanmasının yanı sıra, 2. haftanın konusu olan Python ortamının kurulması ve temel proje yapılarının oluşturulması adımlarına da giriş yapılmıştır.
+
+**Karşılaştığım sorunlar / zorluklar:**
+- Yok.
+
+**Gelecek hafta hedefim:**
+- Backend için FastAPI ve pm4py gibi temel kütüphaneleri kurmak.
+- Backend'de basit bir "Merhaba Dünya" API endpoint'i oluşturarak altyapıyı test etmek.
+- requirements.txt dosyasını oluşturarak backend bağımlılıklarını yönetmek.
+- Ara Rapor Formu için hazırlıklara başlamak.
 
 ### Hafta 1 *(Tarih: GG.AA.YYYY - GG.AA.YYYY)*
 
