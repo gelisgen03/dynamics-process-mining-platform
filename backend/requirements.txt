@@ -1,0 +1,10 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# Process Mining & Data Handling
+pm4py
+pandas
+
+# Utilities
+python-multipart
