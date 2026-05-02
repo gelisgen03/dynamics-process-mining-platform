@@ -20,7 +20,7 @@
 |-------|---------------|--------------|------------------------|-------|
 | 1 | 06.04 - 12.04 | Proje gereksinimlerinin belirlenmesi, süreç madenciliği kavramlarının araştırılması ve sistem mimarisinin tasarlanması| %10 | ✅ Tamamlandı |
 | 2 | 13.04 - 19.04 | Python ortamının kurulması, FastAPI projesinin oluşturulması ve temel backend yapısının hazırlanması ve Ara Rapor Formu Doldurulması | %20 | ✅ Tamamlandı |
-| 3 | 27.04 - 03.05 | Microsoft Dynamics 365 veri yapısının incelenmesi ve örnek event log veri modelinin oluşturulması | %30 | 🔄 Devam Ediyor |
+| 3 | 27.04 - 03.05 | Microsoft Dynamics 365 veri yapısının incelenmesi ve örnek event log veri modelinin oluşturulması | %30 | ✅ Tamamlandı |
 | 4 | 04.05 - 10.05 | Dynamics 365’ten veri çekme simülasyonu ve veri ön işleme modülünün geliştirilmesi | %40 | ⬜ Başlamadı |
 | 5 | 11.05 - 17.05 | pm4py kütüphanesi kullanılarak temel süreç keşfi (process discovery) modülünün geliştirilmesi | %50 | ⬜ Başlamadı |
 | 6 | 18.05 - 24.05 | Farklı süreç keşfi algoritmalarının uygulanması ve model karşılaştırma altyapısının kurulması | %60 | ⬜ Başlamadı |
@@ -37,6 +37,29 @@
 
 > **Kullanım:** Her hafta aşağıdaki şablonu kopyalayıp doldurun. En güncel hafta en üstte olacak şekilde ekleyin.
 
+### Hafta 3 *(Tarih: 27.04.2026 - 03.05.2026)*
+
+**Plandaki hedef:**
+- Microsoft Dynamics 365 veri yapısının incelenmesi ve örnek event log veri modelinin oluşturulması.
+
+**Bu hafta yaptıklarım:**
+- Microsoft Dynamics 365'in potansiyel süreçlerini (örn: Satış Siparişi Akışı) analiz etmek için standart veri yapıları incelendi.
+- Süreç madenciliği için gerekli olan temel alanları (`case_id`, `activity`, `timestamp`) içerecek şekilde `Pydantic` tabanlı bir event log veri modeli tasarlandı.
+- Verilerin çekileceği bulut veritabanı (Supabase) ile bağlantıyı kuracak olan `dbconnect.py` modülü oluşturuldu ve konfigüre edildi.
+- Veritabanından logları çekmek için `get_all_logs` adında bir fonksiyon prototipi geliştirildi.
+- case-based-bussines adında örnek bir log dosyası bulundu ve danışmanla birliikte bunun üzerinden demo yapılması kararlaştırıldı.
+- Bulut veri tabanı olarak supabase seçildi hesap oluşturldu ve temel bağlantı kurulumları projeye eklendi.
+
+**Plana göre durumum:**
+- Bu haftanın hedefleri plana uygun şekilde başarıyla gerçekleştirilmiştir. Veri modelleme ve veritabanı bağlantı altyapısı tamamlanmıştır.
+
+**Karşılaştığım sorunlar / zorluklar:**
+- Yok.
+
+**Gelecek hafta hedefim:**
+- Dynamics 365'ten veri çekme sürecini simüle etmek.
+- `dbconnect.py` modülünü kullanarak Supabase'den çekilen verileri `pandas` DataFrame'e dönüştürecek bir veri ön işleme modülü geliştirmeye başlamak.
+- Veri temizleme ve formatlama (tarih/saat dönüşümleri vb.) adımlarını uygulamak.
 
 ---
 
