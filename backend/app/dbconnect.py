@@ -2,8 +2,8 @@ from supabase import create_client, Client
 import os
 
 # --- Supabase Proje Bilgileri ---
-SUPABASE_URL = "https_linkinizi_buraya_yapistirin"
-SUPABASE_KEY = "anon_key_bilginizi_buraya_yapistirin"
+SUPABASE_URL = "https://btvbbmgwgyqnrckkeqqp.supabase.co"
+SUPABASE_KEY = "sb_secret_YPHZYItPZLCRcEtFvZu05A_XGkRu895"
 
 # --- Supabase Client'ını Başlatma ---
 supabase: Client | None = None

@@ -21,8 +21,8 @@
 | 1 | 06.04 - 12.04 | Proje gereksinimlerinin belirlenmesi, süreç madenciliği kavramlarının araştırılması ve sistem mimarisinin tasarlanması| %10 | ✅ Tamamlandı |
 | 2 | 13.04 - 19.04 | Python ortamının kurulması, FastAPI projesinin oluşturulması ve temel backend yapısının hazırlanması ve Ara Rapor Formu Doldurulması | %20 | ✅ Tamamlandı |
 | 3 | 27.04 - 03.05 | Microsoft Dynamics 365 veri yapısının incelenmesi ve örnek event log veri modelinin oluşturulması | %30 | ✅ Tamamlandı |
-| 4 | 04.05 - 10.05 | Dynamics 365’ten veri çekme simülasyonu ve veri ön işleme modülünün geliştirilmesi | %40 | 🔄 Devam Ediyor |
-| 5 | 11.05 - 17.05 | pm4py kütüphanesi kullanılarak temel süreç keşfi (process discovery) modülünün geliştirilmesi | %50 | ⬜ Başlamadı |
+| 4 | 04.05 - 10.05 | Dynamics 365’ten veri çekme simülasyonu ve veri ön işleme modülünün geliştirilmesi | %40 | ✅ Tamamlandı |
+| 5 | 11.05 - 17.05 | pm4py kütüphanesi kullanılarak temel süreç keşfi (process discovery) modülünün geliştirilmesi | %50 | 🔄 Devam Ediyor |
 | 6 | 18.05 - 24.05 | Farklı süreç keşfi algoritmalarının uygulanması ve model karşılaştırma altyapısının kurulması | %60 | ⬜ Başlamadı |
 | 7 | 01.06 - 07.06 | Uyumluluk analizi (conformance checking) ve performans analiz modüllerinin geliştirilmesi | %70 | ⬜ Başlamadı |
 | 8 | 08.06 - 14.06 | Süreç görselleştirme ve dashboard altyapısının geliştirilmesi | %80 | ⬜ Başlamadı |
@@ -36,6 +36,29 @@
 ## Haftalık İlerleme Kayıtları
 
 > **Kullanım:** Her hafta aşağıdaki şablonu kopyalayıp doldurun. En güncel hafta en üstte olacak şekilde ekleyin.
+### Hafta 4 *(Tarih: 04.05.2026 - 10.05.2026)*
+
+**Plandaki hedef:**
+- Dynamics 365’ten veri çekme simülasyonu ve veri ön işleme modülünün geliştirilmesi.
+
+**Bu hafta yaptıklarım:**
+- Veri depolama için seçilen Supabase üzerinde yeni bir veritabanı projesi yapılandırıldı.
+- Süreç madenciliği verilerini saklamak amacıyla `event_log_data` adında bir tablo oluşturuldu. Bu tablo `case_id`, `activity` ve `timestamp` gibi temel süreç madenciliği alanlarını içerecek şekilde tasarlandı.
+- Örnek `case-based_business_process_event_log.csv` dosyasındaki verileri Supabase veritabanına toplu olarak yüklemek için `import_csv.py` adında bir Python betiği geliştirildi.
+- Bu betik, `pandas` kütüphanesi ile CSV dosyasını okuyup `supabase-py` kütüphanesi aracılığıyla verileri veritabanına aktarmaktadır.
+- Veri aktarım betiği başarıyla çalıştırılarak örnek log verileri bulut veritabanına yüklendi ve veri çekme simülasyonu tamamlandı.
+
+**Plana göre durumum:**
+- Bu haftanın hedefleri plana uygun şekilde başarıyla gerçekleştirilmiştir. Veri çekme simülasyonu, verilerin bir CSV dosyasından okunup bulut veritabanına aktarılmasıyla tamamlanmıştır. Veri ön işleme modülünün önemli bir adımı olan bu aktarım betiği de tamamlanmıştır.
+
+**Karşılaştığım sorunlar / zorluklar:**
+- Python betiğini çalıştırırken başlangıçta dosya yolları ile ilgili bazı küçük sorunlar yaşandı. Bu sorunlar, betikte mutlak dosya yolları kullanılarak ve betik doğru dizinden çalıştırılarak aşıldı.
+
+**Gelecek hafta hedefim:**
+- `pm4py` kütüphanesini kullanarak Supabase veritabanından çekilen verilerle temel bir süreç keşfi (process discovery) yapmak.
+- Keşfedilen süreç modelini (örneğin Petri net) görselleştirecek bir modül geliştirmeye başlamak.
+
+---
 
 ### Hafta 3 *(Tarih: 27.04.2026 - 03.05.2026)*
 
