@@ -1,0 +1,178 @@
+.discoveryTab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Control Panel */
+.controlPanel {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-3);
+  padding: var(--space-lg);
+}
+
+.controlRow {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 160px;
+}
+
+.field span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.field input,
+.field select {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.field input:disabled,
+.field select:disabled {
+  background-color: var(--bg-tertiary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.fieldHelper {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.btnDiscovery {
+  appearance: none;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-2);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btnDiscovery:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  box-shadow: var(--shadow-elevation-2);
+}
+
+.btnDiscovery:disabled {
+  background-color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* Error Box */
+.errorBox {
+  background-color: rgba(211, 52, 56, 0.1);
+  border: 1px solid var(--error);
+  border-radius: var(--radius-3);
+  padding: var(--space-md);
+  color: var(--error);
+  font-size: 13px;
+}
+
+/* Result Panel */
+.resultPanel {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-3);
+  padding: var(--space-lg);
+}
+
+.resultHeader {
+  margin-bottom: var(--space-lg);
+}
+
+.resultHeader h3 {
+  margin-bottom: var(--space-sm);
+  color: var(--success);
+}
+
+.resultMeta {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.badge {
+  display: inline-block;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  padding: 4px 10px;
+  border-radius: var(--radius-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Model Viewer */
+.modelViewer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.petriNetImage {
+  max-width: 100%;
+  height: auto;
+  max-height: 600px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-3);
+  background-color: white;
+}
+
+.modelCaption {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Info Panel */
+.infoPanel {
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-3);
+  padding: var(--space-lg);
+  color: var(--primary-dark);
+}
+
+.infoPanel h3 {
+  margin-bottom: var(--space-md);
+}
+
+.infoPanel p {
+  margin-bottom: var(--space-md);
+  line-height: 1.6;
+}
+
+.infoPanel ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.infoPanel li {
+  font-size: 13px;
+  line-height: 1.6;
+}

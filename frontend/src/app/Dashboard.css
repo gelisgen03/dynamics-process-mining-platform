@@ -1,0 +1,202 @@
+:root {
+  --text: #475467;
+  --text-h: #101828;
+  --bg: #ffffff;
+  --bg-app: #f9fafb;
+  --border: #eaecf0;
+  --sidebar-bg: #ffffff;
+  --sidebar-hover: #f9fafb;
+  --accent: #6941c6;
+  --accent-bg: #f9f5ff;
+  --accent-border: #d6bbfb;
+  --shadow-sm: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.05);
+
+  --sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  font: 16px/1.5 var(--sans);
+  color-scheme: light;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-app);
+  overflow: hidden;
+}
+
+/* Kısıtlamaları tamamen kaldırdık, tam ekran yaptık */
+#root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  box-sizing: border-box;
+}
+
+h1, h2, h3, h4 {
+  color: var(--text-h);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* === DASHBOARD CONTAINER === */
+.dash {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-app);
+  overflow: hidden;
+}
+
+/* === SIDEBAR (Navigation) === */
+.dashSidebar {
+  width: 250px;
+  background-color: var(--bg-primary);
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  box-shadow: var(--shadow-elevation-1);
+}
+
+.dashTitle {
+  padding: var(--space-lg) var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.dashTitle h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: var(--space-xs);
+}
+
+.dashTitle p {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* === SIDEBAR NAVIGATION === */
+.dashTabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--space-sm) 0;
+  list-style: none;
+}
+
+.tabBtn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: var(--space-md) var(--space-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  margin: 0;
+}
+
+.tabBtn:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.tabBtnActive {
+  color: var(--primary);
+  background-color: var(--primary-light);
+  border-left: 4px solid var(--primary);
+  padding-left: calc(var(--space-md) - 4px);
+  font-weight: 600;
+}
+
+.tabBtnActive:hover {
+  background-color: var(--primary-light);
+}
+
+/* === MAIN AREA === */
+.dashMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-app);
+  overflow: hidden;
+}
+
+/* === HEADER === */
+.dashHeader {
+  height: 56px;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-lg);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-elevation-1);
+}
+
+.dashHeader h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* === CONTENT WRAPPER === */
+.dashContentWrapper {
+  flex: 1;
+  padding: var(--space-lg);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === CONTENT PANEL === */
+.dashContent {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-3);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-elevation-1);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hint {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* === SCROLLBAR STYLING === */
+.dashSidebar::-webkit-scrollbar,
+.dashContentWrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dashSidebar::-webkit-scrollbar-track,
+.dashContentWrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashSidebar::-webkit-scrollbar-thumb,
+.dashContentWrapper::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 4px;
+}
+
+.dashSidebar::-webkit-scrollbar-thumb:hover,
+.dashContentWrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}

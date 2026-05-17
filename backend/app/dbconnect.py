@@ -26,3 +26,14 @@ def get_all_logs():
         return supabase.table('event_log_data').select("*").execute()
     return {"data": [], "error": "Supabase client not initialized"}
 
+def get_logs(limit: int = 100, offset: int = 0):
+    """Supabase'den parça parça (limit/offset) veri çeker."""
+    if not supabase:
+        return {"data": [], "error": "Supabase client not initialized"}
+    try:
+        # .limit ve .offset kullanarak sorguyu sınırla
+        response = supabase.table('event_log_data').select("*").limit(limit).offset(offset).execute()
+        return response
+    except Exception as e:
+        return {"data": [], "error": str(e)}
+
