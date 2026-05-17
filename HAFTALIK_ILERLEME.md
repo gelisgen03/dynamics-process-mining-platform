@@ -22,8 +22,8 @@
 | 2 | 13.04 - 19.04 | Python ortamının kurulması, FastAPI projesinin oluşturulması ve temel backend yapısının hazırlanması ve Ara Rapor Formu Doldurulması | %20 | ✅ Tamamlandı |
 | 3 | 27.04 - 03.05 | Microsoft Dynamics 365 veri yapısının incelenmesi ve örnek event log veri modelinin oluşturulması | %30 | ✅ Tamamlandı |
 | 4 | 04.05 - 10.05 | Dynamics 365’ten veri çekme simülasyonu ve veri ön işleme modülünün geliştirilmesi | %40 | ✅ Tamamlandı |
-| 5 | 11.05 - 17.05 | pm4py kütüphanesi kullanılarak temel süreç keşfi (process discovery) modülünün geliştirilmesi | %50 | 🔄 Devam Ediyor |
-| 6 | 18.05 - 24.05 | Farklı süreç keşfi algoritmalarının uygulanması ve model karşılaştırma altyapısının kurulması | %60 | ⬜ Başlamadı |
+| 5 | 11.05 - 17.05 | pm4py kütüphanesi kullanılarak temel süreç keşfi (process discovery) modülünün geliştirilmesi | %50 | ✅ Tamamlandı |
+| 6 | 18.05 - 24.05 | Farklı süreç keşfi algoritmalarının uygulanması ve model karşılaştırma altyapısının kurulması | %60 | 🔄 Devam Ediyor |
 | 7 | 01.06 - 07.06 | Uyumluluk analizi (conformance checking) ve performans analiz modüllerinin geliştirilmesi | %70 | ⬜ Başlamadı |
 | 8 | 08.06 - 14.06 | Süreç görselleştirme ve dashboard altyapısının geliştirilmesi | %80 | ⬜ Başlamadı |
 | 9 | 15.06 - 21.06 | Kullanıcı arayüzü geliştirme , backend ile entegrasyonu, bitirme sunum ve poster hazırlıkları | %90 | ⬜ Başlamadı |
@@ -36,6 +36,34 @@
 ## Haftalık İlerleme Kayıtları
 
 > **Kullanım:** Her hafta aşağıdaki şablonu kopyalayıp doldurun. En güncel hafta en üstte olacak şekilde ekleyin.
+### Hafta 5 *(Tarih: 11.05.2026 - 17.05.2026)*
+
+**Plandaki hedef:**
+- pm4py kütüphanesi kullanılarak temel süreç keşfi (process discovery) modülünün geliştirilmesi.
+
+**Bu hafta yaptıklarım:**
+- Supabase veritabanından `event_log_data` tablosundaki veriler başarıyla çekildi ve `pandas` DataFrame'e dönüştürüldü.
+- `pm4py` kütüphanesinin temel algoritmaları (Inductive Miner ve Alpha Miner) kullanılarak process discovery modülü geliştirildi.
+- Çekilen event log verileri, gerekli formata (EventLog objesi) dönüştürülerek process model keşfi gerçekleştirildi.
+- Keşfedilen süreç modeli (Petri net) görselleştirmek için `graphviz` ve `pm4py` modüllerinin visualization fonksiyonları entegre edildi.
+- Process discovery sonuçları başarıyla görselleştirildi ve örnek çıktılar elde edildi.
+- Veri güvenliği sorunu (Supabase credentials) `.env` dosyası ile çözdü ve `.gitignore` konfigürasyonu tamamlandı.
+- Superbase ile backend , backend ile frontend arasında ki temel Api root ları oluşturuldu
+- Frontend web arayüzünde bulunacak sekmeler belirlendi ve dashboard da ilk veriler gösterildi
+
+**Plana göre durumum:**
+- Bu haftanın hedefleri plana uygun şekilde başarıyla gerçekleştirilmiştir. Temel süreç keşfi modülü tam işlevsel bir şekilde uygulanmış ve test edilmiştir.
+
+**Karşılaştığım sorunlar / zorluklar:**
+- Event log verilerinin pm4py formatına dönüştürülmesi sırasında timestamp formatı uyumsuzlukları yaşandı. Bu sorun, tarih/saat dönüşüm fonksiyonları eklenerek çözüldü.
+- GitHub push protection hatası alındı. Gizli anahtarları `.env` dosyasına taşıyarak ve Git cache'ini temizleyerek problem çözüldü.
+
+**Gelecek hafta hedefim:**
+- Farklı process discovery algoritmalarını (Heuristics Miner, Fuzzy Miner vb.) uygulamak.
+- Algoritmaların karşılaştırması için model karşılaştırma metrikleri geliştirmek.
+- Backend API'sine process discovery endpoint'leri eklemek.
+- Tez Yazımına Başlamak
+---
 ### Hafta 4 *(Tarih: 04.05.2026 - 10.05.2026)*
 
 **Plandaki hedef:**
