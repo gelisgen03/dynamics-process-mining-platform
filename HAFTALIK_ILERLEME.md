@@ -23,7 +23,7 @@
 | 3 | 27.04 - 03.05 | Microsoft Dynamics 365 veri yapısının incelenmesi ve örnek event log veri modelinin oluşturulması | %30 | ✅ Tamamlandı |
 | 4 | 04.05 - 10.05 | Dynamics 365’ten veri çekme simülasyonu ve veri ön işleme modülünün geliştirilmesi | %40 | ✅ Tamamlandı |
 | 5 | 11.05 - 17.05 | pm4py kütüphanesi kullanılarak temel süreç keşfi (process discovery) modülünün geliştirilmesi | %50 | ✅ Tamamlandı |
-| 6 | 18.05 - 24.05 | Farklı süreç keşfi algoritmalarının uygulanması ve model karşılaştırma altyapısının kurulması | %60 | 🔄 Devam Ediyor |
+| 6 | 18.05 - 24.05 | Farklı süreç keşfi algoritmalarının uygulanması ve model karşılaştırma altyapısının kurulması | %60 | ✅ Tamamlandı |
 | 7 | 01.06 - 07.06 | Uyumluluk analizi (conformance checking) ve performans analiz modüllerinin geliştirilmesi | %70 | ⬜ Başlamadı |
 | 8 | 08.06 - 14.06 | Süreç görselleştirme ve dashboard altyapısının geliştirilmesi | %80 | ⬜ Başlamadı |
 | 9 | 15.06 - 21.06 | Kullanıcı arayüzü geliştirme , backend ile entegrasyonu, bitirme sunum ve poster hazırlıkları | %90 | ⬜ Başlamadı |
@@ -36,6 +36,66 @@
 ## Haftalık İlerleme Kayıtları
 
 > **Kullanım:** Her hafta aşağıdaki şablonu kopyalayıp doldurun. En güncel hafta en üstte olacak şekilde ekleyin.
+
+---
+
+### Hafta 6 *(Tarih: 18.05.2026 - 24.05.2026)*
+
+**Plandaki hedef:**
+- Farklı süreç keşfi algoritmalarının uygulanması ve model karşılaştırma altyapısının kurulması.
+
+**Bu hafta yaptıklarım:**
+- Üç farklı process discovery algoritması tam olarak uygulandı: **Inductive Miner**, **Alpha Miner**, **Heuristics Miner**.
+- Her algoritma için dört kalite metriği hesaplayan `model_metrics.py` modülü geliştirildi:
+  - **Fitness** (token-based replay, pm4py): Modelin event log'u ne kadar kapsadığı
+  - **Precision** (ETC token-based): Modelin gereksiz davranış üretip üretmediği
+  - **Generalization** (generalization evaluator): Yeni trace'lere genellenebilirlik
+  - **Simplicity** (node sayısı formülü): Modelin okunabilirliği
+- Algoritmaları aynı log üzerinde karşılaştırıp sıralayan `comparison.py` modülü geliştirildi.
+- Backend API'sine `/compare-models`, `/discover-process`, `/get-metrics` endpoint'leri eklendi.
+- Supabase'in varsayılan 1000 satır limitini aşmak için `dbconnect.py`'de otomatik sayfalama (pagination) uygulandı.
+- Petri net görselleştirmeleri PNG olarak kaydedildi: `petri_net_inductive.png`, `petri_net_alpha.png`, `petri_net_heuristics.png`.
+
+**Algoritma Karşılaştırma Deney Sonuçları (BPI Challenge 2012 – Kredi Başvurusu Dataset):**
+
+*Deney 1: 999 event / 37 case (Supabase sayfalama düzeltmesi öncesi)*
+
+| Sıra | Algoritma | Genel Skor | Fitness | Precision | Generalization | Simplicity |
+|------|-----------|-----------|---------|-----------|----------------|------------|
+| 1 | Heuristics Miner | 58.94 | 0.978 | 0.281 | 0.727 | 0.0 |
+| 2 | Inductive Miner | 57.05 | 1.000 | 0.136 | 0.818 | 0.0 |
+| 3 | Alpha Miner | 48.56 | 0.645 | 0.097 | 0.799 | 0.625 |
+
+*Deney 2: 4995 event / 224 case (Supabase pagination düzeltmesi sonrası)*
+
+| Sıra | Algoritma | Genel Skor | Fitness | Precision | Generalization | Simplicity |
+|------|-----------|-----------|---------|-----------|----------------|------------|
+| 1 | Heuristics Miner | 64.15 | 0.972 | 0.359 | 0.726 | 0.0 |
+| 2 | Inductive Miner | 60.17 | 1.000 | 0.128 | 0.817 | 0.0 |
+| 3 | Alpha Miner | 46.64 | 0.537 | 0.032 | 0.853 | 0.713 |
+
+**Metrik Ağırlıkları:** Fitness %40, Precision %30, Generalization %20, Simplicity %10
+
+**Sonuç Yorumu:**
+- **Heuristics Miner** her iki deneyde de birinci çıktı. Gürültülü gerçek dünya verilerinde (BPI 2012) beklenen davranış.
+- **Inductive Miner** mükemmel fitness (1.0) garanti ediyor ancak precision değeri düşük — model çok geniş davranışlar üretiyor.
+- **Alpha Miner** büyük ve karmaşık log'da fitness değeri düştü (0.645 → 0.537), gürültüye duyarlılığı onaylandı.
+- Daha fazla case ile çalışıldığında (37 → 224) Heuristics precision'ı belirgin biçimde arttı (0.281 → 0.359), veri miktarının model kalitesine etkisi gözlemlendi.
+
+**Plana göre durumum:**
+- Bu haftanın tüm hedefleri tamamlandı. Üç algoritma uygulandı, karşılaştırma altyapısı kuruldu ve deneysel sonuçlar elde edildi.
+
+**Karşılaştığım sorunlar / zorluklar:**
+- `pm4py` modern sürümünde `token_replay.apply()` artık dict yerine liste döndürüyordu; `pm4py.fitness_token_based_replay()` API'sine geçilerek çözüldü.
+- Alignment-based precision hesabı 24 dakika sürdü (362 varyant × 4 sn). ETC token-based precision (`pm4py.precision_token_based_replay`) ile saniyeler içinde sonuç alındı.
+- Supabase varsayılan olarak istek başına maksimum 1000 satır döndürüyor. `dbconnect.py`'ye otomatik pagination eklenerek limit aşıldı.
+
+**Gelecek hafta hedefim:**
+- Frontend arayüzü geliştirme: AlgorithmSelector, ComparisonTable, MetricsChart, ProcessViewer bileşenleri.
+- Backend sonuçlarını React dashboard'unda görselleştirme.
+
+---
+
 ### Hafta 5 *(Tarih: 11.05.2026 - 17.05.2026)*
 
 **Plandaki hedef:**
