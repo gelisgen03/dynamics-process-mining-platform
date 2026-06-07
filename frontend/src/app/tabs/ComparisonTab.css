@@ -1,10 +1,10 @@
-.discoveryTab {
+.comparisonTab {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
 }
 
-/* Control Panel */
+/* Control Panel — aynı DiscoveryTab stili */
 .controlPanel {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-light);
@@ -34,8 +34,7 @@
   letter-spacing: 0.5px;
 }
 
-.field input,
-.field select {
+.field input {
   padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-2);
@@ -44,8 +43,7 @@
   font-size: 13px;
 }
 
-.field input:disabled,
-.field select:disabled {
+.field input:disabled {
   background-color: var(--bg-tertiary);
   color: var(--text-disabled);
   cursor: not-allowed;
@@ -57,7 +55,7 @@
   margin-top: 2px;
 }
 
-.btnDiscovery {
+.btnCompare {
   appearance: none;
   background-color: var(--primary);
   color: white;
@@ -71,17 +69,17 @@
   white-space: nowrap;
 }
 
-.btnDiscovery:hover:not(:disabled) {
+.btnCompare:hover:not(:disabled) {
   background-color: var(--primary-hover);
   box-shadow: var(--shadow-elevation-2);
 }
 
-.btnDiscovery:disabled {
+.btnCompare:disabled {
   background-color: var(--text-disabled);
   cursor: not-allowed;
 }
 
-/* Error Box */
+/* Error / Loading */
 .errorBox {
   background-color: rgba(211, 52, 56, 0.1);
   border: 1px solid var(--error);
@@ -91,161 +89,184 @@
   font-size: 13px;
 }
 
-/* Result Panel */
-.resultPanel {
+.loadingBox {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-3);
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.loadingHint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: var(--space-sm);
+}
+
+/* Best Algorithm Banner */
+.bestAlgo {
+  background: linear-gradient(135deg, var(--primary-light), transparent);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-3);
+  padding: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.bestLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+  min-width: 100px;
+}
+
+.bestName {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  flex: 1;
+}
+
+.bestScore {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.bestMeta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  width: 100%;
+}
+
+/* Section Card */
+.sectionCard {
   background-color: var(--bg-primary);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-3);
   padding: var(--space-lg);
 }
 
-.resultHeader {
-  margin-bottom: var(--space-lg);
-}
-
-.resultHeader h3 {
-  margin-bottom: var(--space-sm);
-  color: var(--success);
-}
-
-.resultMeta {
-  display: flex;
-  gap: var(--space-sm);
-}
-
-.badge {
-  display: inline-block;
-  background-color: var(--primary-light);
-  color: var(--primary);
-  padding: 4px 10px;
-  border-radius: var(--radius-2);
-  font-size: 12px;
+.sectionTitle {
+  font-size: 14px;
   font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Model Viewer */
-.modelViewer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-md);
+/* Comparison Table */
+.tableContainer {
+  overflow-x: auto;
 }
 
-.petriNetImage {
-  max-width: 100%;
-  height: auto;
-  max-height: 600px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  background-color: white;
-}
-
-.modelCaption {
+.compTable {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 13px;
+}
+
+.compTable th {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   color: var(--text-secondary);
+  border-bottom: 2px solid var(--border-light);
+  white-space: nowrap;
+}
+
+.compTable td {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+}
+
+.compTable tr:last-child td {
+  border-bottom: none;
+}
+
+.rowBest td {
+  background-color: var(--primary-light);
+}
+
+.tdRank {
+  font-size: 18px;
   text-align: center;
 }
 
-/* Algo Hint */
-.algoHint {
-  margin-top: var(--space-md);
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-/* Overall Score */
-.overallScore {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-sm);
-  padding: var(--space-lg);
-  background: linear-gradient(135deg, var(--primary-light), transparent);
-  border: 1px solid var(--primary);
-  border-radius: var(--radius-3);
-  margin-bottom: var(--space-lg);
-}
-
-.overallLabel {
-  font-size: 13px;
+.tdAlgo {
   font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  flex: 1;
 }
 
-.overallValue {
-  font-size: 40px;
+.tdScore {
   font-weight: 700;
   color: var(--primary);
-  line-height: 1;
+  font-size: 15px;
 }
 
-.overallSub {
-  font-size: 18px;
-  color: var(--text-tertiary);
+/* Metric Chart Rows */
+.metricCharts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
 }
 
-/* Metrics Grid */
-.metricsGrid {
+.chartRow {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: 120px 1fr;
   gap: var(--space-md);
-  margin-bottom: var(--space-lg);
+  align-items: start;
 }
 
-.metricCard {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  padding: var(--space-md);
+.chartLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  padding-top: 4px;
+}
+
+.chartBars {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
 }
 
-.metricLabel {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text-secondary);
+.chartBarGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.metricValue {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.metricBar {
-  height: 6px;
+.chartBarWrap {
+  height: 12px;
   background-color: var(--border-light);
-  border-radius: 3px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
-.metricFill {
+.chartBar {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 6px;
   transition: width 0.6s ease;
+  min-width: 2px;
 }
 
-.metricDesc {
+.chartBarLabel {
+  display: flex;
+  justify-content: space-between;
   font-size: 11px;
   color: var(--text-tertiary);
-  line-height: 1.4;
-}
-
-/* Model Viewer */
-.modelViewer h4 {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--space-md);
 }
 
 /* Info Panel */
@@ -259,11 +280,13 @@
 
 .infoPanel h3 {
   margin-bottom: var(--space-md);
+  font-size: 15px;
 }
 
 .infoPanel p {
   margin-bottom: var(--space-md);
   line-height: 1.6;
+  font-size: 13px;
 }
 
 .infoPanel ul {

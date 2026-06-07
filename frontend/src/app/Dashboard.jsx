@@ -2,15 +2,22 @@ import { useMemo, useState } from "react";
 import "./Dashboard.css";
 import DataTab from "./tabs/DataTab";
 import DiscoveryTab from "./tabs/DiscoveryTab";
+import ComparisonTab from "./tabs/ComparisonTab";
+import VariantTab from "./tabs/VariantTab";
+import PerformanceTab from "./tabs/PerformanceTab";
+import ConformanceTab from "./tabs/ConformanceTab";
+import SettingsTab from "./tabs/SettingsTab";
 
 export default function Dashboard() {
   const tabs = useMemo(
     () => [
       { key: "data", label: "Veri Kümesi Özeti", component: DataTab },
       { key: "discovery", label: "Süreç Keşfi", component: DiscoveryTab },
-      { key: "variants", label: "Varyant Analizi", component: null },
-      { key: "performance", label: "Performans", component: null },
-      { key: "settings", label: "Sistem Ayarları", component: null },
+      { key: "comparison", label: "Algoritma Karşılaştırması", component: ComparisonTab },
+      { key: "variants", label: "Varyant Analizi", component: VariantTab },
+      { key: "performance", label: "Performans", component: PerformanceTab },
+      { key: "conformance", label: "Uyumluluk Analizi", component: ConformanceTab },
+      { key: "settings", label: "Sistem Ayarları", component: SettingsTab },
     ],
     []
   );

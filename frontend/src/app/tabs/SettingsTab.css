@@ -1,0 +1,229 @@
+.settingsTab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.sectionCard {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-3);
+  padding: var(--space-lg);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.sectionHeader .sectionTitle { margin-bottom: 0; }
+
+.sectionHint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-lg);
+  line-height: 1.5;
+}
+
+.btnCheck {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btnCheck:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Status Rows */
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.statusRow:last-child { border-bottom: none; }
+
+.statusDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusDot.ok   { background-color: #10b981; box-shadow: 0 0 6px #10b981; }
+.statusDot.fail { background-color: #ef4444; box-shadow: 0 0 6px #ef4444; }
+
+.statusInfo { flex: 1; }
+
+.statusName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.statusDetail {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: monospace;
+  margin-top: 2px;
+}
+
+.statusBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.statusBadge.ok   { background: rgba(16,185,129,0.1); color: #10b981; }
+.statusBadge.fail { background: rgba(239,68,68,0.1);  color: #ef4444; }
+
+/* Weight List */
+.weightList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.weightRow {
+  display: grid;
+  grid-template-columns: 120px 1fr 40px 1fr;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.weightLabel {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.weightBarWrap {
+  height: 10px;
+  background-color: var(--border-light);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.weightBar {
+  height: 100%;
+  border-radius: 5px;
+}
+
+.weightPct {
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.weightDesc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.formulaBox {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2);
+  padding: var(--space-md);
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow-x: auto;
+}
+
+.formulaBox code { font-family: monospace; }
+
+/* Algorithm Grid */
+.algoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+}
+
+.algoCard {
+  border: 1px solid var(--border-light);
+  border-top: 3px solid;
+  border-radius: var(--radius-3);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.algoName {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.algoSection { display: flex; flex-direction: column; gap: 4px; }
+
+.algoSectionTitle {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.algoSection ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strengthItem { font-size: 12px; color: #10b981; }
+.weakItem     { font-size: 12px; color: var(--text-tertiary); }
+
+/* Project Info */
+.projectInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.projectRow {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.projectRow:last-child { border-bottom: none; }
+
+.projectKey {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.projectVal {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}

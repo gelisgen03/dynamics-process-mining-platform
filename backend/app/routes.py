@@ -278,6 +278,308 @@ def discover_process(body: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Discovery hatası: {str(e)}")
 
+# --- Conformance Checking ---
+@router.post("/conformance")
+def get_conformance(body: dict):
+    """
+    Token-based replay ile her case için uyumluluk analizi.
+
+    Body: { "algorithm": "inductive", "limit": 1000 }
+    """
+    try:
+        algorithm = body.get("algorithm", "inductive")
+        limit     = body.get("limit", 1000)
+
+        response = get_logs(limit=limit, offset=0)
+        if hasattr(response, 'error') and response.error:
+            raise HTTPException(status_code=400, detail=str(response.error))
+
+        data = response.data if hasattr(response, 'data') else response.get("data", [])
+        if not data:
+            raise HTTPException(status_code=400, detail="Veri bulunamadı")
+
+        df = pd.DataFrame(data)
+        df = preprocess(df)
+        log = to_pm4py_log(df)
+
+        # Model keşfi
+        if algorithm == "alpha":
+            net, im, fm = pm4py.discover_petri_net_alpha(log)
+        elif algorithm == "heuristics":
+            net, im, fm = pm4py.discover_petri_net_heuristics(log)
+        else:
+            net, im, fm = pm4py.discover_petri_net_inductive(log)
+
+        # Token-based replay — her trace için ayrı sonuç
+        from pm4py.algo.conformance.tokenreplay import algorithm as token_replay
+        replay_results = token_replay.apply(log, net, im, fm)
+
+        # Case ID'lerini log'dan al
+        case_ids = [
+            trace.attributes.get("concept:name", f"case_{i}")
+            for i, trace in enumerate(log)
+        ]
+
+        # Case bazında sonuçlar
+        case_results = []
+        for case_id, res in zip(case_ids, replay_results):
+            fitness       = round(float(res.get("trace_fitness", 0)), 3)
+            missing       = int(res.get("missing_tokens", 0))
+            remaining     = int(res.get("remaining_tokens", 0))
+            is_fit        = bool(res.get("trace_is_fit", False))
+
+            if is_fit:
+                status = "fit"
+            elif fitness >= 0.5:
+                status = "partial"
+            else:
+                status = "non_fit"
+
+            case_results.append({
+                "case_id":          str(case_id),
+                "status":           status,
+                "fitness":          fitness,
+                "missing_tokens":   missing,
+                "remaining_tokens": remaining,
+            })
+
+        total     = len(case_results)
+        fit_count = sum(1 for c in case_results if c["status"] == "fit")
+        par_count = sum(1 for c in case_results if c["status"] == "partial")
+        non_count = sum(1 for c in case_results if c["status"] == "non_fit")
+        avg_fit   = round(sum(c["fitness"] for c in case_results) / total, 3) if total else 0
+
+        # En kötü 20 case (fitness'a göre artan sıra)
+        worst = sorted(case_results, key=lambda x: x["fitness"])[:20]
+
+        # Fitness dağılımı (bucket)
+        buckets = {"0.0–0.2": 0, "0.2–0.4": 0, "0.4–0.6": 0, "0.6–0.8": 0, "0.8–1.0": 0, "1.0": 0}
+        for c in case_results:
+            f = c["fitness"]
+            if f == 1.0:
+                buckets["1.0"] += 1
+            elif f >= 0.8:
+                buckets["0.8–1.0"] += 1
+            elif f >= 0.6:
+                buckets["0.6–0.8"] += 1
+            elif f >= 0.4:
+                buckets["0.4–0.6"] += 1
+            elif f >= 0.2:
+                buckets["0.2–0.4"] += 1
+            else:
+                buckets["0.0–0.2"] += 1
+
+        distribution = [
+            {"range": k, "count": v, "percentage": round(v / total * 100, 1)}
+            for k, v in buckets.items()
+        ]
+
+        return {
+            "status":          "success",
+            "algorithm":       algorithm,
+            "events_analyzed": len(df),
+            "cases_analyzed":  total,
+            "overall": {
+                "fit_cases":       fit_count,
+                "partial_cases":   par_count,
+                "non_fit_cases":   non_count,
+                "compliance_rate": round(fit_count / total * 100, 1) if total else 0,
+                "avg_fitness":     avg_fit,
+            },
+            "distribution": distribution,
+            "worst_cases":   worst,
+        }
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Conformance hatası: {str(e)}")
+
+
+# --- Performance Analysis ---
+@router.post("/performance")
+def get_performance(body: dict):
+    """
+    Case süresi ve aktivite bekleme süresi istatistikleri.
+
+    Body: { "limit": 1000 }
+    """
+    try:
+        limit = body.get("limit", 1000)
+
+        response = get_logs(limit=limit, offset=0)
+        if hasattr(response, 'error') and response.error:
+            raise HTTPException(status_code=400, detail=str(response.error))
+
+        data = response.data if hasattr(response, 'data') else response.get("data", [])
+        if not data:
+            raise HTTPException(status_code=400, detail="Veri bulunamadı")
+
+        df = pd.DataFrame(data)
+        df = preprocess(df)
+
+        # --- Case süreleri ---
+        case_stats = (
+            df.groupby("case_id")["timestamp"]
+            .agg(start="min", end="max")
+            .reset_index()
+        )
+        case_stats["duration_hours"] = (
+            (case_stats["end"] - case_stats["start"])
+            .dt.total_seconds() / 3600
+        )
+        case_stats["duration_days"] = case_stats["duration_hours"] / 24
+
+        avg_days = float(case_stats["duration_days"].mean())
+        median_days = float(case_stats["duration_days"].median())
+        min_days = float(case_stats["duration_days"].min())
+        max_days = float(case_stats["duration_days"].max())
+
+        # --- Süre dağılımı (bucket) ---
+        bins   = [0, 1, 7, 30, 90, float("inf")]
+        labels = ["<1 gün", "1-7 gün", "7-30 gün", "30-90 gün", "90+ gün"]
+        case_stats["bucket"] = pd.cut(
+            case_stats["duration_days"], bins=bins, labels=labels
+        )
+        distribution = (
+            case_stats["bucket"]
+            .value_counts()
+            .reindex(labels)
+            .fillna(0)
+            .astype(int)
+            .reset_index()
+        )
+        distribution.columns = ["bucket", "count"]
+        distribution["percentage"] = (
+            distribution["count"] / len(case_stats) * 100
+        ).round(1)
+
+        # --- Aktivite başına bekleme süresi ---
+        df_sorted = df.sort_values(["case_id", "timestamp"]).copy()
+        df_sorted["next_ts"] = df_sorted.groupby("case_id")["timestamp"].shift(-1)
+        df_sorted["wait_hours"] = (
+            (df_sorted["next_ts"] - df_sorted["timestamp"])
+            .dt.total_seconds() / 3600
+        )
+        act_wait = (
+            df_sorted.groupby("activity")["wait_hours"]
+            .mean()
+            .dropna()
+            .sort_values(ascending=False)
+            .head(15)
+            .reset_index()
+        )
+        act_wait.columns = ["activity", "avg_wait_hours"]
+        act_wait["avg_wait_hours"] = act_wait["avg_wait_hours"].round(2)
+
+        # --- En yavaş / en hızlı 5 case ---
+        top_slow = (
+            case_stats.nlargest(5, "duration_days")
+            [["case_id", "duration_days"]]
+            .assign(duration_days=lambda x: x["duration_days"].round(2))
+            .to_dict(orient="records")
+        )
+        top_fast = (
+            case_stats[case_stats["duration_days"] > 0]
+            .nsmallest(5, "duration_days")
+            [["case_id", "duration_days"]]
+            .assign(duration_days=lambda x: x["duration_days"].round(2))
+            .to_dict(orient="records")
+        )
+
+        return {
+            "status": "success",
+            "events_analyzed": len(df),
+            "cases_analyzed": int(len(case_stats)),
+            "summary": {
+                "avg_days":    round(avg_days, 2),
+                "median_days": round(median_days, 2),
+                "min_days":    round(min_days, 2),
+                "max_days":    round(max_days, 2),
+            },
+            "distribution": distribution.to_dict(orient="records"),
+            "activity_wait": act_wait.to_dict(orient="records"),
+            "slowest_cases": top_slow,
+            "fastest_cases": top_fast,
+        }
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Performans analizi hatası: {str(e)}")
+
+
+# --- Variant Analysis ---
+@router.post("/variants")
+def get_variants(body: dict):
+    """
+    Trace varyantlarını ve aktivite frekanslarını döndürür.
+
+    Body: { "limit": 1000 }
+    """
+    try:
+        limit = body.get("limit", 1000)
+
+        response = get_logs(limit=limit, offset=0)
+        if hasattr(response, 'error') and response.error:
+            raise HTTPException(status_code=400, detail=str(response.error))
+
+        data = response.data if hasattr(response, 'data') else response.get("data", [])
+        if not data:
+            raise HTTPException(status_code=400, detail="Veri bulunamadı")
+
+        df = pd.DataFrame(data)
+        df = preprocess(df)
+
+        # Her case için aktivite dizisini hesapla
+        traces = (
+            df.groupby("case_id")["activity"]
+            .apply(lambda acts: " → ".join(acts.tolist()))
+            .reset_index()
+            .rename(columns={"activity": "trace"})
+        )
+
+        # Varyantları frekansa göre sırala
+        variant_counts = (
+            traces["trace"]
+            .value_counts()
+            .reset_index()
+        )
+        variant_counts.columns = ["trace", "frequency"]
+        variant_counts["percentage"] = (
+            variant_counts["frequency"] / len(traces) * 100
+        ).round(2)
+        variant_counts["rank"] = range(1, len(variant_counts) + 1)
+
+        # Aktivite frekansları
+        activity_counts = (
+            df["activity"]
+            .value_counts()
+            .reset_index()
+        )
+        activity_counts.columns = ["activity", "count"]
+        activity_counts["percentage"] = (
+            activity_counts["count"] / len(df) * 100
+        ).round(2)
+
+        top_variants = variant_counts.head(10).to_dict(orient="records")
+        top_activities = activity_counts.head(15).to_dict(orient="records")
+
+        return {
+            "status": "success",
+            "events_analyzed": len(df),
+            "cases_analyzed": int(traces.shape[0]),
+            "unique_variants": int(len(variant_counts)),
+            "top_variants": top_variants,
+            "top_activities": top_activities,
+        }
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Varyant analizi hatası: {str(e)}")
+
+
 # --- Compare Models ---
 @router.post("/compare-models")
 def compare_models(body: dict):

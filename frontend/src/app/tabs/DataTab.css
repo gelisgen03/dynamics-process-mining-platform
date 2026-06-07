@@ -190,3 +190,106 @@
   font-style: italic;
   padding: var(--space-lg) !important;
 }
+
+/* === CATEGORY BLOCKS === */
+.categoryList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.categoryBlock {
+  border: 1px solid;
+  border-radius: var(--radius-3);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.categoryTitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.categoryPrefix {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.7;
+  font-family: monospace;
+}
+
+.categoryNote {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.activityChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.activityChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid;
+  border-radius: var(--radius-2);
+  padding: 6px 10px;
+  background-color: var(--bg-primary);
+  min-width: 0;
+}
+
+.chipIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.chipText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.chipCode {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: monospace;
+  color: var(--text-primary);
+}
+
+.chipLabel {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* === TABLE ACTIVITY CELL === */
+.activityCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activityIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.activityName {
+  font-weight: 600;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.caseId {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--text-primary);
+}

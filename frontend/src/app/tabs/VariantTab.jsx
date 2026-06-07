@@ -1,0 +1,144 @@
+import { useState } from "react";
+import { apiClient } from "../api/client";
+import "./VariantTab.css";
+
+export default function VariantTab() {
+  const [limit, setLimit]     = useState(1000);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState(null);
+  const [result, setResult]   = useState(null);
+
+  const handleAnalyze = async () => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await apiClient.getVariants(limit);
+      setResult(res);
+    } catch (err) {
+      setError(err.message || "Varyant analizi başarısız");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const maxFreq = result?.top_variants?.[0]?.frequency ?? 1;
+  const maxCount = result?.top_activities?.[0]?.count ?? 1;
+
+  return (
+    <div className="variantTab">
+      {/* Kontrol */}
+      <div className="controlPanel">
+        <div className="controlRow">
+          <label className="field">
+            <span>Veri Sayısı</span>
+            <input
+              type="number"
+              min="100"
+              max="5000"
+              step="100"
+              value={limit}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              disabled={loading}
+            />
+            <small className="fieldHelper">Analiz edilecek event sayısı</small>
+          </label>
+          <button className="btnVariant" onClick={handleAnalyze} disabled={loading}>
+            {loading ? "Analiz Ediliyor..." : "Varyantları Analiz Et"}
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="errorBox">{error}</div>}
+
+      {result && (
+        <>
+          {/* Özet Kartlar */}
+          <div className="statsGrid">
+            <div className="statCard">
+              <div className="statLabel">Toplam Event</div>
+              <div className="statValue">{result.events_analyzed.toLocaleString()}</div>
+            </div>
+            <div className="statCard">
+              <div className="statLabel">Toplam Case</div>
+              <div className="statValue">{result.cases_analyzed.toLocaleString()}</div>
+            </div>
+            <div className="statCard">
+              <div className="statLabel">Benzersiz Varyant</div>
+              <div className="statValue">{result.unique_variants}</div>
+            </div>
+            <div className="statCard">
+              <div className="statLabel">Varyant / Case</div>
+              <div className="statValue">
+                {(result.unique_variants / result.cases_analyzed * 100).toFixed(1)}%
+              </div>
+              <div className="statHelper">kaç case'in kendine özgü yolu var</div>
+            </div>
+          </div>
+
+          {/* Üst Varyantlar */}
+          <div className="sectionCard">
+            <h3 className="sectionTitle">En Sık Görülen 10 Trace Varyantı</h3>
+            <div className="variantList">
+              {result.top_variants.map((v) => (
+                <div className="variantRow" key={v.rank}>
+                  <div className="variantRank">#{v.rank}</div>
+                  <div className="variantInfo">
+                    <div className="variantTrace">{v.trace}</div>
+                    <div className="variantBar">
+                      <div
+                        className="variantFill"
+                        style={{ width: `${(v.frequency / maxFreq) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="variantStats">
+                    <span className="variantCount">{v.frequency} case</span>
+                    <span className="variantPct">{v.percentage}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Aktivite Frekansları */}
+          <div className="sectionCard">
+            <h3 className="sectionTitle">Aktivite Frekansları (İlk 15)</h3>
+            <div className="activityList">
+              {result.top_activities.map((a, i) => (
+                <div className="activityRow" key={i}>
+                  <div className="activityName">{a.activity}</div>
+                  <div className="activityBarWrap">
+                    <div
+                      className="activityBar"
+                      style={{ width: `${(a.count / maxCount) * 100}%` }}
+                    />
+                  </div>
+                  <div className="activityStats">
+                    <span>{a.count.toLocaleString()}</span>
+                    <span className="activityPct">{a.percentage}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {!result && !loading && (
+        <div className="infoPanel">
+          <h3>Varyant Analizi</h3>
+          <p>
+            Her case'in hangi aktivite sırasını izlediğini analiz eder. Aynı sırayı paylaşan
+            case'ler bir "varyant" oluşturur. Az varyant → standart süreç; çok varyant → karmaşık/gürültülü süreç.
+          </p>
+          <ul>
+            <li><strong>Trace:</strong> Bir case'in baştan sona aktivite dizisi</li>
+            <li><strong>Varyant:</strong> Aynı trace'e sahip case grubu</li>
+            <li><strong>Frekans:</strong> O varyantın kaç case'de görüldüğü</li>
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
