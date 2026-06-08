@@ -1,0 +1,95 @@
+/* CaseSelector renders as fragment — items live directly in .controlRow */
+
+.caseField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.caseLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.caseSelect {
+  height: 34px;
+  padding: 0 var(--sp-10, 10px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--r-4);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  outline: none;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.caseSelect:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, .14);
+}
+
+.caseSelect:disabled {
+  background: var(--bg-surface2);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.caseLimitInput {
+  width: 90px;
+  height: 34px;
+  padding: 0 var(--sp-10, 10px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--r-4);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.caseLimitInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, .14);
+}
+
+.caseLimitInput:disabled {
+  background: var(--bg-surface2);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.casePreview {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 10px;
+  height: 34px;
+  border-radius: var(--r-4);
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.previewCount {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.previewUnit {
+  font-weight: 600;
+}
+
+.previewTotal {
+  opacity: 0.7;
+  font-size: 11px;
+}

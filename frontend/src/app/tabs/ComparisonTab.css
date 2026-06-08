@@ -1,108 +1,107 @@
 .comparisonTab {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--sp-20);
 }
 
-/* Control Panel — aynı DiscoveryTab stili */
-.controlPanel {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  padding: var(--space-lg);
-}
-
-.controlRow {
+/* Best algorithm card */
+.bestAlgoCard {
+  background: linear-gradient(135deg, var(--primary-light), rgba(0,120,212,.04));
+  border: 1px solid rgba(0,120,212,.3);
+  border-radius: var(--r-8);
+  padding: var(--sp-24);
   display: flex;
-  gap: var(--space-md);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-24);
   flex-wrap: wrap;
-  align-items: end;
+  box-shadow: var(--shadow-2);
 }
 
-.field {
+.bestAlgoLeft {}
+.bestAlgoTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-secondary);
+  margin-bottom: var(--sp-6);
+}
+
+.bestAlgoName {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: var(--sp-4);
+}
+
+.bestAlgoMeta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.bestAlgoScore {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.bestScoreValue {
+  font-size: 52px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.bestScoreSub {
+  font-size: 18px;
+  color: var(--text-tertiary);
+}
+
+/* Metric compare grid */
+.metricCompareGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-16);
+}
+
+@media (max-width: 700px) {
+  .metricCompareGrid { grid-template-columns: 1fr; }
+}
+
+.metricCompareCard {
+  background: var(--bg-surface2);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-6);
+  padding: var(--sp-16);
+}
+
+.metricCompareLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-bottom: var(--sp-12);
+}
+
+.metricBars {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  min-width: 160px;
+  gap: var(--sp-8);
 }
 
-.field span {
+.metricBarGroup {
+  display: grid;
+  grid-template-columns: 70px 1fr 50px;
+  align-items: center;
+  gap: var(--sp-8);
   font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.field input {
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-2);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 13px;
-}
+.metricBarLabel { color: var(--text-secondary); font-size: 11px; }
+.metricBarValue { font-weight: 600; text-align: right; font-size: 11px; }
 
-.field input:disabled {
-  background-color: var(--bg-tertiary);
-  color: var(--text-disabled);
-  cursor: not-allowed;
-}
-
-.fieldHelper {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
-
-.btnCompare {
-  appearance: none;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  padding: var(--space-md) var(--space-lg);
-  border-radius: var(--radius-2);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.btnCompare:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-  box-shadow: var(--shadow-elevation-2);
-}
-
-.btnCompare:disabled {
-  background-color: var(--text-disabled);
-  cursor: not-allowed;
-}
-
-/* Error / Loading */
-.errorBox {
-  background-color: rgba(211, 52, 56, 0.1);
-  border: 1px solid var(--error);
-  border-radius: var(--radius-3);
-  padding: var(--space-md);
-  color: var(--error);
-  font-size: 13px;
-}
-
-.loadingBox {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  padding: var(--space-lg);
-  text-align: center;
-  color: var(--text-secondary);
-}
-
-.loadingHint {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin-top: var(--space-sm);
-}
 
 /* Best Algorithm Banner */
 .bestAlgo {

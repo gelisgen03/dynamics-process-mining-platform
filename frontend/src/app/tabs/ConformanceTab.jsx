@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { apiClient } from "../api/client";
+import CaseSelector from "../components/CaseSelector";
 import "./ConformanceTab.css";
 
 const ALGO_INFO = {
@@ -9,14 +10,15 @@ const ALGO_INFO = {
 };
 
 const STATUS_CONFIG = {
-  fit:      { label: "Uyumlu",        color: "#10b981", bg: "rgba(16,185,129,0.1)",  icon: "✅" },
-  partial:  { label: "Kısmen Uyumlu", color: "#f59e0b", bg: "rgba(245,158,11,0.1)", icon: "⚠️" },
-  non_fit:  { label: "Uyumsuz",       color: "#ef4444", bg: "rgba(239,68,68,0.1)",  icon: "❌" },
+  fit:     { label: "Uyumlu",        color: "#107c10", bg: "rgba(16,124,16,.1)",  icon: "✓" },
+  partial: { label: "Kısmen Uyumlu", color: "#d83b01", bg: "rgba(216,59,1,.1)",   icon: "~" },
+  non_fit: { label: "Uyumsuz",       color: "#c50f1f", bg: "rgba(197,15,31,.1)",  icon: "✗" },
 };
 
 export default function ConformanceTab() {
   const [algorithm, setAlgorithm] = useState("inductive");
-  const [limit, setLimit]         = useState(1000);
+  const [outcome, setOutcome]     = useState("all");
+  const [caseLimit, setCaseLimit] = useState(500);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState(null);
   const [result, setResult]       = useState(null);
@@ -26,7 +28,7 @@ export default function ConformanceTab() {
     setError(null);
     setResult(null);
     try {
-      const res = await apiClient.getConformance(algorithm, limit);
+      const res = await apiClient.getConformance(algorithm, outcome, caseLimit);
       setResult(res);
     } catch (err) {
       setError(err.message || "Uyumluluk analizi başarısız");
@@ -56,18 +58,15 @@ export default function ConformanceTab() {
             </select>
           </label>
 
-          <label className="field">
-            <span>Veri Sayısı</span>
-            <input
-              type="number" min="100" max="5000" step="100"
-              value={limit}
-              onChange={(e) => setLimit(Number(e.target.value))}
-              disabled={loading}
-            />
-            <small className="fieldHelper">Analiz edilecek event sayısı</small>
-          </label>
+          <CaseSelector
+            outcome={outcome}
+            caseLimit={caseLimit}
+            onOutcomeChange={setOutcome}
+            onCaseLimitChange={setCaseLimit}
+            disabled={loading}
+          />
 
-          <button className="btnConf" onClick={handleAnalyze} disabled={loading}>
+          <button className="btnPrimary" onClick={handleAnalyze} disabled={loading}>
             {loading ? "Analiz Ediliyor..." : "Uyumluluğu Analiz Et"}
           </button>
         </div>
@@ -86,60 +85,56 @@ export default function ConformanceTab() {
       {result && overall && (
         <>
           {/* Genel Uyumluluk Kartları */}
-          <div className="overallGrid">
-            <div className="overallCard highlight">
-              <div className="overallLabel">Uyumluluk Oranı</div>
-              <div className="overallValue">{overall.compliance_rate}%</div>
-              <div className="overallSub">{overall.fit_cases} / {result.cases_analyzed} case</div>
+          <div className="confOverallGrid">
+            <div className="confHighlightCard">
+              <div className="confHighlightLabel">Uyumluluk Oranı</div>
+              <div className="confHighlightValue">{overall.compliance_rate}%</div>
+              <div className="confHighlightSub">
+                {overall.fit_cases} / {result.cases_analyzed} case · {result.events_analyzed.toLocaleString()} olay
+              </div>
             </div>
-            <div className="overallCard">
-              <div className="overallLabel">Ortalama Fitness</div>
-              <div className="overallValue">{(overall.avg_fitness * 100).toFixed(1)}%</div>
-              <div className="overallSub">tüm case'lerin ortalaması</div>
+            <div className="confStatCard">
+              <div className="confStatLabel">Ortalama Fitness</div>
+              <div className="confStatValue">{(overall.avg_fitness * 100).toFixed(1)}%</div>
+              <div className="confStatSub">tüm case'lerin ortalaması</div>
             </div>
-            <div className="statusCard" style={{ borderColor: STATUS_CONFIG.fit.color, background: STATUS_CONFIG.fit.bg }}>
-              <div className="statusIcon">{STATUS_CONFIG.fit.icon}</div>
-              <div className="statusCount">{overall.fit_cases}</div>
-              <div className="statusLabel">Uyumlu</div>
-            </div>
-            <div className="statusCard" style={{ borderColor: STATUS_CONFIG.partial.color, background: STATUS_CONFIG.partial.bg }}>
-              <div className="statusIcon">{STATUS_CONFIG.partial.icon}</div>
-              <div className="statusCount">{overall.partial_cases}</div>
-              <div className="statusLabel">Kısmen</div>
-            </div>
-            <div className="statusCard" style={{ borderColor: STATUS_CONFIG.non_fit.color, background: STATUS_CONFIG.non_fit.bg }}>
-              <div className="statusIcon">{STATUS_CONFIG.non_fit.icon}</div>
-              <div className="statusCount">{overall.non_fit_cases}</div>
-              <div className="statusLabel">Uyumsuz</div>
-            </div>
+            {["fit", "partial", "non_fit"].map((key) => {
+              const cfg = STATUS_CONFIG[key];
+              return (
+                <div key={key} className="confStatusCard" style={{ borderTop: `3px solid ${cfg.color}` }}>
+                  <div className="confStatusIcon" style={{ color: cfg.color }}>{cfg.icon}</div>
+                  <div className="confStatusCount">{overall[`${key}_cases`]}</div>
+                  <div className="confStatusLabel" style={{ color: cfg.color }}>{cfg.label}</div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Fitness Dağılımı */}
           <div className="sectionCard">
             <h3 className="sectionTitle">Fitness Dağılımı</h3>
             <div className="distList">
-              {result.distribution.map((d) => (
-                <div className="distRow" key={d.range}>
-                  <div className="distLabel">{d.range}</div>
-                  <div className="distBarWrap">
-                    <div
-                      className="distBar"
-                      style={{
-                        width: `${(d.count / maxDist) * 100}%`,
-                        backgroundColor: d.range === "1.0" ? "#10b981"
-                          : d.range.startsWith("0.8") ? "#34d399"
-                          : d.range.startsWith("0.6") ? "#f59e0b"
-                          : d.range.startsWith("0.4") ? "#fb923c"
-                          : "#ef4444",
-                      }}
-                    />
+              {result.distribution.map((d) => {
+                const color = d.range === "1.0"            ? "#107c10"
+                            : d.range.startsWith("0.8")    ? "#00b7c3"
+                            : d.range.startsWith("0.6")    ? "#d83b01"
+                            : "#c50f1f";
+                return (
+                  <div className="distRow" key={d.range}>
+                    <div className="distLabel">{d.range}</div>
+                    <div className="distBarWrap">
+                      <div
+                        className="distBar"
+                        style={{ width: `${(d.count / maxDist) * 100}%`, background: color }}
+                      />
+                    </div>
+                    <div className="distStats">
+                      <span className="distCount">{d.count}</span>
+                      <span className="distPct">{d.percentage}%</span>
+                    </div>
                   </div>
-                  <div className="distStats">
-                    <span className="distCount">{d.count}</span>
-                    <span className="distPct">{d.percentage}%</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -147,7 +142,7 @@ export default function ConformanceTab() {
           <div className="sectionCard">
             <h3 className="sectionTitle">En Düşük Uyumluluklu Case'ler (İlk 20)</h3>
             <div className="tableContainer">
-              <table className="confTable">
+              <table>
                 <thead>
                   <tr>
                     <th>Case ID</th>
@@ -164,35 +159,25 @@ export default function ConformanceTab() {
                       <tr key={c.case_id}>
                         <td className="caseIdCell">{c.case_id}</td>
                         <td>
-                          <span
-                            className="statusBadge"
-                            style={{ color: cfg.color, background: cfg.bg, borderColor: cfg.color }}
-                          >
+                          <span className="confStatusBadge" style={{ color: cfg.color, background: cfg.bg }}>
                             {cfg.icon} {cfg.label}
                           </span>
                         </td>
                         <td>
                           <div className="fitnessCell">
-                            <div className="fitnessMini">
+                            <div className="fitnessMiniBar">
                               <div
-                                className="fitnessFill"
-                                style={{
-                                  width: `${c.fitness * 100}%`,
-                                  backgroundColor: cfg.color,
-                                }}
+                                className="fitnessMiniBarFill"
+                                style={{ width: `${c.fitness * 100}%`, background: cfg.color }}
                               />
                             </div>
-                            <span style={{ color: cfg.color, fontWeight: 600 }}>
+                            <span style={{ color: cfg.color, fontWeight: 600, fontSize: 12 }}>
                               {(c.fitness * 100).toFixed(1)}%
                             </span>
                           </div>
                         </td>
-                        <td className={c.missing_tokens > 0 ? "tokenBad" : "tokenOk"}>
-                          {c.missing_tokens}
-                        </td>
-                        <td className={c.remaining_tokens > 0 ? "tokenBad" : "tokenOk"}>
-                          {c.remaining_tokens}
-                        </td>
+                        <td className={c.missing_tokens > 0 ? "tokenBad" : "tokenOk"}>{c.missing_tokens}</td>
+                        <td className={c.remaining_tokens > 0 ? "tokenBad" : "tokenOk"}>{c.remaining_tokens}</td>
                       </tr>
                     );
                   })}
@@ -211,11 +196,11 @@ export default function ConformanceTab() {
             Her case'in modele ne kadar uyduğunu ölçer.
           </p>
           <ul>
-            <li><strong>✅ Uyumlu:</strong> Case tamamen modele uyuyor (fitness = 1.0)</li>
-            <li><strong>⚠️ Kısmen:</strong> Bazı adımlar atlandı veya ekstra yapıldı (0.5–1.0)</li>
-            <li><strong>❌ Uyumsuz:</strong> Case büyük ölçüde sapmış (0.0–0.5)</li>
+            <li><strong>✓ Uyumlu:</strong> Case tamamen modele uyuyor (fitness = 1.0)</li>
+            <li><strong>~ Kısmen:</strong> Bazı adımlar atlandı veya ekstra yapıldı (0.5–1.0)</li>
+            <li><strong>✗ Uyumsuz:</strong> Case büyük ölçüde sapmış (0.0–0.5)</li>
             <li><strong>Eksik Token:</strong> Modelde olması gereken ama gerçekleşmeyen adımlar</li>
-            <li><strong>Kalan Token:</strong> Süreç bitmeden kalan, tamamlanmamış adımlar</li>
+            <li><strong>Kalan Token:</strong> Tamamlanmamış adımlar</li>
           </ul>
         </div>
       )}

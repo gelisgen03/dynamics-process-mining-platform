@@ -1,26 +1,35 @@
 import { useState } from "react";
 import { apiClient } from "../api/client";
+import CaseSelector from "../components/CaseSelector";
 import "./PerformanceTab.css";
 
 function fmtDays(days) {
-  if (days === undefined || days === null) return "-";
+  if (days === undefined || days === null) return "—";
   if (days < 1)  return `${(days * 24).toFixed(1)} saat`;
   if (days < 30) return `${days.toFixed(1)} gün`;
   return `${(days / 30).toFixed(1)} ay`;
 }
 
+function getActivityMeta(activity) {
+  if (activity?.startsWith("A_")) return { color: "#0078d4" };
+  if (activity?.startsWith("O_")) return { color: "#107c10" };
+  if (activity?.startsWith("W_")) return { color: "#d83b01" };
+  return { color: "#8764b8" };
+}
+
 export default function PerformanceTab() {
-  const [limit, setLimit]     = useState(1000);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
-  const [result, setResult]   = useState(null);
+  const [outcome, setOutcome]   = useState("all");
+  const [caseLimit, setCaseLimit] = useState(500);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
+  const [result, setResult]     = useState(null);
 
   const handleAnalyze = async () => {
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const res = await apiClient.getPerformance(limit);
+      const res = await apiClient.getPerformance(outcome, caseLimit);
       setResult(res);
     } catch (err) {
       setError(err.message || "Performans analizi başarısız");
@@ -29,25 +38,22 @@ export default function PerformanceTab() {
     }
   };
 
-  const maxDist  = Math.max(...(result?.distribution?.map((d) => d.count) ?? [1]));
-  const maxWait  = result?.activity_wait?.[0]?.avg_wait_hours ?? 1;
+  const maxDist = Math.max(...(result?.distribution?.map((d) => d.count) ?? [1]));
+  const maxWait = result?.activity_wait?.[0]?.avg_wait_hours ?? 1;
 
   return (
     <div className="performanceTab">
       {/* Kontrol */}
       <div className="controlPanel">
         <div className="controlRow">
-          <label className="field">
-            <span>Veri Sayısı</span>
-            <input
-              type="number" min="100" max="5000" step="100"
-              value={limit}
-              onChange={(e) => setLimit(Number(e.target.value))}
-              disabled={loading}
-            />
-            <small className="fieldHelper">Analiz edilecek event sayısı</small>
-          </label>
-          <button className="btnPerf" onClick={handleAnalyze} disabled={loading}>
+          <CaseSelector
+            outcome={outcome}
+            caseLimit={caseLimit}
+            onOutcomeChange={setOutcome}
+            onCaseLimitChange={setCaseLimit}
+            disabled={loading}
+          />
+          <button className="btnPrimary" onClick={handleAnalyze} disabled={loading}>
             {loading ? "Hesaplanıyor..." : "Performansı Analiz Et"}
           </button>
         </div>
@@ -55,30 +61,29 @@ export default function PerformanceTab() {
 
       {error && <div className="errorBox">{error}</div>}
 
+      {loading && (
+        <div className="loadingBox">
+          <p>Case süreleri ve darboğaz noktaları hesaplanıyor...</p>
+          <p className="loadingHint">Bu işlem birkaç saniye sürebilir.</p>
+        </div>
+      )}
+
       {result && (
         <>
-          {/* Özet Kartlar */}
+          {/* Özet KPI Kartları */}
           <div className="statsGrid">
-            <div className="statCard">
-              <div className="statLabel">Ortalama Süre</div>
-              <div className="statValue">{fmtDays(result.summary.avg_days)}</div>
-              <div className="statHelper">case başına ortalama</div>
-            </div>
-            <div className="statCard">
-              <div className="statLabel">Medyan Süre</div>
-              <div className="statValue">{fmtDays(result.summary.median_days)}</div>
-              <div className="statHelper">ortanca case süresi</div>
-            </div>
-            <div className="statCard">
-              <div className="statLabel">En Kısa</div>
-              <div className="statValue">{fmtDays(result.summary.min_days)}</div>
-              <div className="statHelper">en hızlı tamamlanan</div>
-            </div>
-            <div className="statCard">
-              <div className="statLabel">En Uzun</div>
-              <div className="statValue">{fmtDays(result.summary.max_days)}</div>
-              <div className="statHelper">en yavaş tamamlanan</div>
-            </div>
+            {[
+              { label: "Ortalama Süre", value: fmtDays(result.summary.avg_days), sub: "case başına ortalama" },
+              { label: "Medyan Süre",   value: fmtDays(result.summary.median_days), sub: "ortanca case süresi" },
+              { label: "En Kısa",       value: fmtDays(result.summary.min_days), sub: "en hızlı tamamlanan" },
+              { label: "En Uzun",       value: fmtDays(result.summary.max_days), sub: "en yavaş tamamlanan" },
+            ].map((s) => (
+              <div className="statCard" key={s.label}>
+                <div className="statLabel">{s.label}</div>
+                <div className="statValue">{s.value}</div>
+                <div className="statHelper">{s.sub}</div>
+              </div>
+            ))}
           </div>
 
           {/* Süre Dağılımı */}
@@ -91,7 +96,7 @@ export default function PerformanceTab() {
                   <div className="distBarWrap">
                     <div
                       className="distBar"
-                      style={{ width: `${(d.count / maxDist) * 100}%` }}
+                      style={{ width: `${(d.count / maxDist) * 100}%`, background: "#0078d4" }}
                     />
                   </div>
                   <div className="distStats">
@@ -103,35 +108,30 @@ export default function PerformanceTab() {
             </div>
           </div>
 
-          {/* Aktivite Bekleme Süreleri */}
+          {/* Darboğaz Analizi */}
           <div className="sectionCard">
-            <h3 className="sectionTitle">Aktivite Başına Ortalama Bekleme Süresi</h3>
+            <h3 className="sectionTitle">Darboğaz Analizi — Aktivite Başına Bekleme Süresi</h3>
             <p className="sectionHint">
-              Her aktiviteden sonra bir sonraki adıma geçmek için beklenen ortalama süre.
-              Yüksek değer = darboğaz noktası.
+              Yüksek değer = darboğaz noktası. A_ başvuru, O_ teklif, W_ iş akışı görevlerini temsil eder.
             </p>
             <div className="waitList">
               {result.activity_wait.map((a, i) => {
                 const meta = getActivityMeta(a.activity);
                 return (
-                  <div className="waitRow" key={i}>
-                    <div className="waitActivity">
-                      <span className="waitIcon">{meta.icon}</span>
-                      <span className="waitName">{a.activity}</span>
-                    </div>
-                    <div className="waitBarWrap">
+                  <div className="distRow" key={i}>
+                    <div className="distLabel">{a.activity}</div>
+                    <div className="distBarWrap">
                       <div
-                        className="waitBar"
-                        style={{
-                          width: `${(a.avg_wait_hours / maxWait) * 100}%`,
-                          backgroundColor: meta.color,
-                        }}
+                        className="distBar"
+                        style={{ width: `${(a.avg_wait_hours / maxWait) * 100}%`, background: meta.color }}
                       />
                     </div>
-                    <div className="waitValue">
-                      {a.avg_wait_hours >= 24
-                        ? `${(a.avg_wait_hours / 24).toFixed(1)} gün`
-                        : `${a.avg_wait_hours.toFixed(1)} saat`}
+                    <div className="distStats">
+                      <span className="distCount" style={{ color: meta.color }}>
+                        {a.avg_wait_hours >= 24
+                          ? `${(a.avg_wait_hours / 24).toFixed(1)} gün`
+                          : `${a.avg_wait_hours.toFixed(1)} saat`}
+                      </span>
                     </div>
                   </div>
                 );
@@ -140,10 +140,10 @@ export default function PerformanceTab() {
           </div>
 
           {/* En Yavaş / En Hızlı */}
-          <div className="caseGrid">
+          <div className="perfCaseGrid">
             <div className="sectionCard">
               <h3 className="sectionTitle">En Yavaş 5 Case</h3>
-              <table className="caseTable">
+              <table>
                 <thead>
                   <tr><th>Case ID</th><th>Süre</th></tr>
                 </thead>
@@ -151,16 +151,15 @@ export default function PerformanceTab() {
                   {result.slowest_cases.map((c, i) => (
                     <tr key={i}>
                       <td className="caseIdCell">{c.case_id}</td>
-                      <td className="caseDur slow">{fmtDays(c.duration_days)}</td>
+                      <td style={{ color: "#c50f1f", fontWeight: 600 }}>{fmtDays(c.duration_days)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-
             <div className="sectionCard">
               <h3 className="sectionTitle">En Hızlı 5 Case</h3>
-              <table className="caseTable">
+              <table>
                 <thead>
                   <tr><th>Case ID</th><th>Süre</th></tr>
                 </thead>
@@ -168,7 +167,7 @@ export default function PerformanceTab() {
                   {result.fastest_cases.map((c, i) => (
                     <tr key={i}>
                       <td className="caseIdCell">{c.case_id}</td>
-                      <td className="caseDur fast">{fmtDays(c.duration_days)}</td>
+                      <td style={{ color: "#107c10", fontWeight: 600 }}>{fmtDays(c.duration_days)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -194,28 +193,4 @@ export default function PerformanceTab() {
       )}
     </div>
   );
-}
-
-// Aktivite ikonları (DataTab ile aynı mantık)
-function getActivityMeta(activity) {
-  const map = {
-    A_SUBMITTED: { icon: "📤", color: "#3b82f6" },
-    A_PARTLYSUBMITTED: { icon: "📋", color: "#3b82f6" },
-    A_PREACCEPTED: { icon: "⏳", color: "#3b82f6" },
-    A_ACCEPTED: { icon: "✅", color: "#3b82f6" },
-    A_FINALIZED: { icon: "🏁", color: "#3b82f6" },
-    A_DECLINED: { icon: "❌", color: "#3b82f6" },
-    A_CANCELLED: { icon: "🚫", color: "#3b82f6" },
-    O_SELECTED: { icon: "🎯", color: "#10b981" },
-    O_CREATED: { icon: "📝", color: "#10b981" },
-    O_SENT: { icon: "📨", color: "#10b981" },
-    O_ACCEPTED: { icon: "✅", color: "#10b981" },
-    O_DECLINED: { icon: "❌", color: "#10b981" },
-    O_CANCELLED: { icon: "🚫", color: "#10b981" },
-  };
-  if (map[activity]) return map[activity];
-  if (activity?.startsWith("A_")) return { icon: "📋", color: "#3b82f6" };
-  if (activity?.startsWith("O_")) return { icon: "📄", color: "#10b981" };
-  if (activity?.startsWith("W_")) return { icon: "⚙️", color: "#f59e0b" };
-  return { icon: "🔵", color: "#6b7280" };
 }

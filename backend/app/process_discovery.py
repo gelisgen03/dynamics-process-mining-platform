@@ -117,10 +117,13 @@ class ProcessDiscovery:
         """
         try:
             print("🔍 Heuristics Miner çalışıyor...")
-            
-            # Direkt Petri Net döndürür
-            net, initial_marking, final_marking = heuristics_miner.apply(event_log)
-            
+            print(f"   Dependency threshold: {dependency_threshold}")
+
+            parameters = {
+                heuristics_miner.Variants.CLASSIC.value.Parameters.DEPENDENCY_THRESH: dependency_threshold
+            }
+            net, initial_marking, final_marking = heuristics_miner.apply(event_log, parameters=parameters)
+
             print("✅ Heuristics Miner tamamlandı")
             print(f"   Places: {len(net.places)}, Transitions: {len(net.transitions)}")
             return net, initial_marking, final_marking

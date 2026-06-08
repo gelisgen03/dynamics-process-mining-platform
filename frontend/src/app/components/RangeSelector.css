@@ -1,0 +1,99 @@
+/* RangeSelector renders as fragment — items live directly in .controlRow */
+
+.rangeField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.rangeLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.rangeField input {
+  width: 90px;
+  height: 34px;
+  padding: 0 var(--sp-10, 10px);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--r-4);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.rangeField input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, .14);
+}
+
+.rangeField input:disabled {
+  background: var(--bg-surface2);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* The — divider between inputs */
+.rangeDash {
+  font-size: 16px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  user-select: none;
+  align-self: flex-end;
+  padding-bottom: 8px; /* vertically center within 34px input */
+}
+
+/* Inline preview badge */
+.rangePreview {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 10px;
+  height: 34px;
+  border-radius: var(--r-4);
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.rangePreview.ok {
+  background: rgba(16, 124, 16, .07);
+  border: 1px solid rgba(16, 124, 16, .25);
+  color: #107c10;
+}
+
+.rangePreview.warn {
+  background: rgba(216, 59, 1, .07);
+  border: 1px solid rgba(216, 59, 1, .3);
+  color: #d83b01;
+}
+
+.rangePreview.invalid {
+  background: rgba(197, 15, 31, .07);
+  border: 1px solid rgba(197, 15, 31, .25);
+  color: #c50f1f;
+}
+
+.previewCount {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.previewUnit {
+  font-weight: 600;
+}
+
+.previewTotal {
+  opacity: 0.6;
+  font-size: 11px;
+}

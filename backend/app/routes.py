@@ -16,6 +16,42 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Graphviz yolunu ekle
 os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
 
+# === CASE FILTER HELPER ===
+def get_filtered_df(body: dict):
+    """
+    outcome_filter ("all" | "accepted" | "declined") ve case_limit'e göre
+    veritabanından veri çekip filtreler. Hazır DataFrame döner.
+    """
+    outcome_filter = body.get("outcome_filter", "all")
+    case_limit     = int(body.get("case_limit", 500))
+    fetch_rows     = 50000  # filtreleme için yeterli havuz
+
+    response = get_logs(limit=fetch_rows, offset=0)
+    if hasattr(response, "error") and response.error:
+        raise HTTPException(status_code=400, detail=str(response.error))
+
+    data = response.data if hasattr(response, "data") else response.get("data", [])
+    if not data:
+        raise HTTPException(status_code=400, detail="Veri bulunamadı")
+
+    df = pd.DataFrame(data)
+    df = preprocess(df)
+
+    if outcome_filter == "accepted":
+        qualifying = set(df[df["activity"] == "A_ACCEPTED"]["case_id"])
+        df = df[df["case_id"].isin(qualifying)]
+    elif outcome_filter == "declined":
+        qualifying = set(df[df["activity"] == "A_DECLINED"]["case_id"])
+        df = df[df["case_id"].isin(qualifying)]
+
+    selected_cases = df["case_id"].unique()[:case_limit]
+    df = df[df["case_id"].isin(selected_cases)]
+
+    if len(df) == 0:
+        raise HTTPException(status_code=400, detail="Filtre sonrası veri kalmadı")
+
+    return df
+
 # --- Health Check ---
 @router.get("/health")
 def health_check():
@@ -24,6 +60,19 @@ def health_check():
         "status": "ok",
         "message": "Process Mining Backend API is running"
     }
+
+# --- Data Count ---
+@router.get("/data/count")
+def get_data_count():
+    """Tablodaki toplam kayıt sayısını döndürür."""
+    try:
+        if not supabase:
+            return {"count": 0, "error": "Supabase bağlantısı yok"}
+        response = supabase.table("event_log_data").select("*", count="exact", head=True).execute()
+        return {"count": response.count or 0}
+    except Exception as e:
+        return {"count": 0, "error": str(e)}
+
 
 # --- Data Summary ---
 @router.get("/data/summary")
@@ -218,42 +267,26 @@ def discover_process(body: dict):
     """
     try:
         algorithm = body.get("algorithm", "inductive").lower()
-        limit = body.get("limit", 500)
-        
+
         if algorithm not in ["inductive", "alpha", "heuristics"]:
             raise HTTPException(status_code=400, detail=f"Bilinmeyen algoritma: {algorithm}")
-        
-        # Veri çek
-        response = get_logs(limit=limit, offset=0)
-        if hasattr(response, 'error') and response.error:
-            raise HTTPException(status_code=400, detail=str(response.error))
-        
-        data = response.data if hasattr(response, 'data') else response.get("data", [])
-        if not data:
-            raise HTTPException(status_code=400, detail="Veri bulunamadı")
-        
-        # DataFrame'e çevir ve preprocess
-        df = pd.DataFrame(data)
-        df = preprocess(df)
-        
-        # PM4Py log'a çevir
+
+        df = get_filtered_df(body)
         log = to_pm4py_log(df)
-        
-        # Algoritma çalıştır
+
         if algorithm == "inductive":
             net, im, fm = ProcessDiscovery.discover_with_inductive_miner(log)
         elif algorithm == "alpha":
             net, im, fm = ProcessDiscovery.discover_with_alpha_miner(log)
         elif algorithm == "heuristics":
-            net, im, fm = ProcessDiscovery.discover_with_heuristics_miner(log, dependency_threshold=0.5)
+            threshold = max(0.1, min(0.99, float(body.get("dependency_threshold", 0.5))))
+            net, im, fm = ProcessDiscovery.discover_with_heuristics_miner(log, dependency_threshold=threshold)
         else:
             raise HTTPException(status_code=400, detail=f"Bilinmeyen algoritma: {algorithm}")
-        
-        # Sonuç kontrolü
+
         if net is None:
             raise HTTPException(status_code=500, detail=f"Algoritma çalıştırılamadı: {algorithm}")
-        
-        # Metrikleri hesapla
+
         metrics = ModelMetrics.get_model_quality_score(log, net, im, fm)
         
         # Petri net bilgisi
@@ -288,18 +321,7 @@ def get_conformance(body: dict):
     """
     try:
         algorithm = body.get("algorithm", "inductive")
-        limit     = body.get("limit", 1000)
-
-        response = get_logs(limit=limit, offset=0)
-        if hasattr(response, 'error') and response.error:
-            raise HTTPException(status_code=400, detail=str(response.error))
-
-        data = response.data if hasattr(response, 'data') else response.get("data", [])
-        if not data:
-            raise HTTPException(status_code=400, detail="Veri bulunamadı")
-
-        df = pd.DataFrame(data)
-        df = preprocess(df)
+        df = get_filtered_df(body)
         log = to_pm4py_log(df)
 
         # Model keşfi
@@ -405,18 +427,7 @@ def get_performance(body: dict):
     Body: { "limit": 1000 }
     """
     try:
-        limit = body.get("limit", 1000)
-
-        response = get_logs(limit=limit, offset=0)
-        if hasattr(response, 'error') and response.error:
-            raise HTTPException(status_code=400, detail=str(response.error))
-
-        data = response.data if hasattr(response, 'data') else response.get("data", [])
-        if not data:
-            raise HTTPException(status_code=400, detail="Veri bulunamadı")
-
-        df = pd.DataFrame(data)
-        df = preprocess(df)
+        df = get_filtered_df(body)
 
         # --- Case süreleri ---
         case_stats = (
@@ -518,18 +529,7 @@ def get_variants(body: dict):
     Body: { "limit": 1000 }
     """
     try:
-        limit = body.get("limit", 1000)
-
-        response = get_logs(limit=limit, offset=0)
-        if hasattr(response, 'error') and response.error:
-            raise HTTPException(status_code=400, detail=str(response.error))
-
-        data = response.data if hasattr(response, 'data') else response.get("data", [])
-        if not data:
-            raise HTTPException(status_code=400, detail="Veri bulunamadı")
-
-        df = pd.DataFrame(data)
-        df = preprocess(df)
+        df = get_filtered_df(body)
 
         # Her case için aktivite dizisini hesapla
         traces = (
@@ -594,22 +594,7 @@ def compare_models(body: dict):
     """
     try:
         algorithms = body.get("algorithms", ["inductive", "alpha", "heuristics"])
-        limit = body.get("limit", 500)
-        
-        # Veri çek
-        response = get_logs(limit=limit, offset=0)
-        if hasattr(response, 'error') and response.error:
-            raise HTTPException(status_code=400, detail=str(response.error))
-        
-        data = response.data if hasattr(response, 'data') else response.get("data", [])
-        if not data:
-            raise HTTPException(status_code=400, detail="Veri bulunamadı")
-        
-        # DataFrame'e çevir ve preprocess
-        df = pd.DataFrame(data)
-        df = preprocess(df)
-        
-        # PM4Py log'a çevir
+        df = get_filtered_df(body)
         log = to_pm4py_log(df)
         
         # Algoritmaları karşılaştır
@@ -643,24 +628,9 @@ def get_metrics_endpoint(body: dict):
     """
     try:
         algorithm = body.get("algorithm", "inductive").lower()
-        limit = body.get("limit", 500)
-        
-        # Veri çek
-        response = get_logs(limit=limit, offset=0)
-        if hasattr(response, 'error') and response.error:
-            raise HTTPException(status_code=400, detail=str(response.error))
-        
-        data = response.data if hasattr(response, 'data') else response.get("data", [])
-        if not data:
-            raise HTTPException(status_code=400, detail="Veri bulunamadı")
-        
-        # DataFrame'e çevir ve preprocess
-        df = pd.DataFrame(data)
-        df = preprocess(df)
-        
-        # PM4Py log'a çevir
+        df = get_filtered_df(body)
         log = to_pm4py_log(df)
-        
+
         # Algoritma çalıştır
         if algorithm == "inductive":
             net, im, fm = ProcessDiscovery.discover_with_inductive_miner(log)
@@ -670,14 +640,12 @@ def get_metrics_endpoint(body: dict):
             net, im, fm = ProcessDiscovery.discover_with_heuristics_miner(log, dependency_threshold=0.5)
         else:
             raise HTTPException(status_code=400, detail=f"Bilinmeyen algoritma: {algorithm}")
-        
-        # Sonuç kontrolü
+
         if net is None:
             raise HTTPException(status_code=500, detail=f"Algoritma çalıştırılamadı: {algorithm}")
-        
-        # Metrikleri hesapla
+
         metrics = ModelMetrics.get_model_quality_score(log, net, im, fm)
-        
+
         return {
             "status": "success",
             "algorithm": algorithm,

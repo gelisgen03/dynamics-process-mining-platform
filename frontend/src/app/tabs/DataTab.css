@@ -1,160 +1,397 @@
-.tabSection h2 {
-  margin: 0 0 12px;
-}
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.card {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
-}
-
-.cardLabel {
-  color: var(--text);
-  font-size: 14px;
-}
-
-.cardValue {
-  margin-top: 6px;
-  font-size: 22px;
-  color: var(--text-h);
-}
-
-.panel {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
-}
-
-.panelHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.panelHeader h3 {
-  margin: 0;
-  color: var(--text-h);
-}
-
-.btn {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-h);
-  border-radius: 10px;
-  padding: 8px 10px;
-  cursor: pointer;
-}
-
-.hint {
-  margin: 10px 0 0;
-  color: var(--text);
-}
-
 .dataTab {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--sp-20);
 }
 
-/* === STAT CARDS GRID === */
-.statsGrid {
+/* ── INTRO BANNER ─────────────────────────────────────────────────── */
+.introBanner {
+  background: linear-gradient(135deg, #f0f8ff 0%, #eff6fc 60%, #fff 100%);
+  border: 1px solid rgba(0, 120, 212, .15);
+  border-radius: var(--r-12);
+  padding: var(--sp-32);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-md);
+  grid-template-columns: 1fr 1.4fr;
+  gap: var(--sp-32);
+  align-items: start;
+  box-shadow: var(--shadow-4);
 }
 
-.statCard {
-  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(0, 120, 212, 0.05) 100%);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  padding: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+@media (max-width: 900px) {
+  .introBanner { grid-template-columns: 1fr; }
 }
 
-.statCard:hover {
-  box-shadow: var(--shadow-elevation-2);
-  border-color: var(--primary);
-}
-
-.statLabel {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.statValue {
-  font-size: 28px;
+.introBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  background: var(--primary-light);
   color: var(--primary);
+  border: 1px solid rgba(0,120,212,.2);
+  margin-bottom: var(--sp-12);
 }
 
-.statHelper {
+.introTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--sp-12);
+}
+
+.introDesc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--sp-16);
+}
+
+.introTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+}
+
+.introTag {
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg-surface2);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+
+/* Stats 2×3 grid */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-10, 10px);
+}
+
+.miniStat {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-top: 3px solid transparent;
+  border-radius: var(--r-6);
+  padding: var(--sp-12) var(--sp-16);
+  box-shadow: var(--shadow-2);
+}
+
+.miniStatValue {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: var(--sp-4);
+}
+
+.miniStatLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.miniStatSub {
   font-size: 11px;
   color: var(--text-tertiary);
 }
 
-/* === SECTION CARD === */
-.sectionCard {
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  padding: var(--space-lg);
+/* ── PROCESS FLOW ─────────────────────────────────────────────────── */
+.processSteps {
+  display: flex;
+  position: relative;
+  padding: var(--sp-8) 0 0;
+  overflow-x: auto;
+  gap: 0;
 }
 
-.sectionHeader {
+/* Gradient connecting line through circle centers */
+.processLine {
+  position: absolute;
+  top: 27px;          /* center of 56px circle = 28px − 1px */
+  left: 8.3%;
+  right: 8.3%;
+  height: 2px;
+  background: linear-gradient(90deg, #0078d4 0%, #107c10 40%, #f59e0b 70%, #8764b8 100%);
+  opacity: .25;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.processStep {
+  flex: 1;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  padding: 0 var(--sp-8);
+  gap: var(--sp-6);
+}
+
+.processCircle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2.5px solid;
   display: flex;
   align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-4);
+  position: relative;
+  flex-shrink: 0;
+  transition: transform .2s, box-shadow .2s;
+}
+
+.processCircle:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-8);
+}
+
+.processStepNum {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-2);
+}
+
+.processIcon { font-size: 22px; line-height: 1; }
+
+.processStepTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.processStepCode {
+  font-family: 'Cascadia Code', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.processStepDesc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.4;
+  max-width: 100px;
+}
+
+/* ── TWO COLUMN SECTION ───────────────────────────────────────────── */
+.twoColSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-20);
+}
+
+@media (max-width: 800px) {
+  .twoColSection { grid-template-columns: 1fr; }
+}
+
+/* ── CATEGORY BARS ────────────────────────────────────────────────── */
+.catBars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-20);
+}
+
+.catBarRow { display: flex; flex-direction: column; gap: var(--sp-6); }
+
+.catBarHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.catPrefix {
+  font-family: 'Cascadia Code', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+.catLabel { font-size: 13px; font-weight: 600; color: var(--text-primary); flex: 1; }
+
+.catPct { font-size: 16px; font-weight: 700; flex-shrink: 0; }
+
+.catBarTrack {
+  height: 12px;
+  background: var(--border-light);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.catBarFill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width .6s ease;
+}
+
+.catBarSub { font-size: 11px; color: var(--text-tertiary); }
+
+/* ── OUTCOME BARS ─────────────────────────────────────────────────── */
+.outcomeBars { display: flex; flex-direction: column; gap: var(--sp-16); }
+
+.outcomeRow { display: flex; flex-direction: column; gap: var(--sp-6); }
+
+.outcomeHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+}
+
+.outcomeIcon { font-size: 15px; font-weight: 700; flex-shrink: 0; }
+
+.outcomeLabel { font-size: 13px; font-weight: 600; color: var(--text-primary); flex: 1; }
+
+.outcomeCount { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+.outcomePct { font-size: 14px; font-weight: 700; min-width: 34px; text-align: right; }
+
+.outcomeTrack {
+  height: 10px;
+  background: var(--border-light);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.outcomeFill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width .6s ease;
+}
+
+.outcomeNote {
+  margin-top: var(--sp-8);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  padding: var(--sp-8) var(--sp-12);
+  background: var(--bg-surface2);
+  border-radius: var(--r-4);
+  border-left: 3px solid var(--border-medium);
+}
+
+/* ── ACTIVITY CATEGORY CARD ───────────────────────────────────────── */
+.catCardHeader {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: var(--space-lg);
-  gap: var(--space-md);
+  gap: var(--sp-16);
+  padding-left: var(--sp-12);
+  border-left: 4px solid;
+  margin-bottom: var(--sp-16);
 }
 
-.sectionHeader h3 {
-  font-size: 16px;
-  font-weight: 600;
+.catCardTitle {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin-bottom: var(--sp-4);
+}
+
+.catCardPrefix {
+  font-family: 'Cascadia Code', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: .7;
+}
+
+.catCardDesc { font-size: 12px; color: var(--text-tertiary); }
+
+.catCardStat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.catCardStatVal { font-size: 28px; font-weight: 700; line-height: 1; }
+.catCardStatSub { font-size: 11px; color: var(--text-tertiary); }
+
+/* ── ACTIVITY FREQUENCY LIST ──────────────────────────────────────── */
+.actFreqList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+
+.actFreqRow {
+  display: grid;
+  grid-template-columns: 260px 1fr 70px;
+  align-items: center;
+  gap: var(--sp-12);
+}
+
+@media (max-width: 700px) {
+  .actFreqRow { grid-template-columns: 1fr; }
+}
+
+.actFreqName { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.actFreqCode {
+  font-family: 'Cascadia Code', monospace;
+  font-size: 12px;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.btnRefresh {
-  appearance: none;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-2);
-  font-size: 13px;
+.actFreqLabel { font-size: 11px; color: var(--text-tertiary); }
+
+.actFreqTrack {
+  height: 8px;
+  background: var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.actFreqFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .5s ease;
+  min-width: 2px;
+}
+
+.actFreqCount {
+  font-size: 12px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  text-align: right;
+  white-space: nowrap;
 }
 
-.btnRefresh:hover {
-  background-color: var(--primary-hover);
-  box-shadow: var(--shadow-elevation-2);
-}
-
-.btnRefresh:active {
-  background-color: var(--primary-dark);
-}
-
-/* === TABLE === */
-.tableContainer {
-  overflow-x: auto;
-  border-radius: var(--radius-2);
-  border: 1px solid var(--border-light);
-}
+/* ── DATA TABLE ───────────────────────────────────────────────────── */
+.tableContainer { overflow-x: auto; }
 
 .dataTable {
   width: 100%;
@@ -162,134 +399,52 @@
   font-size: 13px;
 }
 
-.dataTable thead {
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-medium);
-}
+.dataTable thead { background: var(--bg-surface2); }
 
 .dataTable th {
-  padding: var(--space-md);
+  padding: var(--sp-8) var(--sp-12);
   text-align: left;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
 }
 
 .dataTable td {
-  padding: var(--space-md);
+  padding: 10px var(--sp-12);
   border-bottom: 1px solid var(--border-light);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
-.dataTable tbody tr:hover {
-  background-color: var(--bg-secondary);
+.dataTable tr:last-child td { border-bottom: none; }
+.dataTable tr:hover td { background: var(--bg-hover); }
+
+.activityCell { display: flex; align-items: center; gap: var(--sp-8); }
+
+.activityName {
+  font-family: 'Cascadia Code', monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.caseId {
+  font-family: 'Cascadia Code', monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 .emptyState {
   text-align: center;
   color: var(--text-tertiary);
   font-style: italic;
-  padding: var(--space-lg) !important;
+  padding: var(--sp-24) !important;
 }
 
-/* === CATEGORY BLOCKS === */
-.categoryList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-}
-
-.categoryBlock {
-  border: 1px solid;
-  border-radius: var(--radius-3);
-  padding: var(--space-md) var(--space-lg);
-}
-
-.categoryTitle {
+.hint {
   font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--space-md);
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.categoryPrefix {
-  font-size: 11px;
-  font-weight: 400;
-  opacity: 0.7;
-  font-family: monospace;
-}
-
-.categoryNote {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  margin: 0;
-}
-
-.activityChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-}
-
-.activityChip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid;
-  border-radius: var(--radius-2);
-  padding: 6px 10px;
-  background-color: var(--bg-primary);
-  min-width: 0;
-}
-
-.chipIcon {
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.chipText {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.chipCode {
-  font-size: 11px;
-  font-weight: 700;
-  font-family: monospace;
-  color: var(--text-primary);
-}
-
-.chipLabel {
-  font-size: 10px;
   color: var(--text-tertiary);
-  white-space: nowrap;
-}
-
-/* === TABLE ACTIVITY CELL === */
-.activityCell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.activityIcon {
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.activityName {
-  font-weight: 600;
-  font-size: 12px;
-  font-family: monospace;
-}
-
-.caseId {
-  font-family: monospace;
-  font-size: 12px;
-  color: var(--text-primary);
+  padding: var(--sp-16) 0;
 }

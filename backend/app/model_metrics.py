@@ -139,16 +139,11 @@ class ModelMetrics:
             arcs = len(petri_net.arcs)
             
             total_nodes = places + transitions
-            
-            # Node'lere göre basitlik (50 node'yi max threshold olarak al)
-            if total_nodes <= 10:
-                simplicity = 1.0
-            elif total_nodes <= 50:
-                simplicity = 1 - ((total_nodes - 10) / 40) * 0.5
-            else:
-                simplicity = max(0.5 - ((total_nodes - 50) / 100), 0.0)
-            
-            # Arc'lere göre düzelt (çok fazla arc = kompleks)
+
+            # 10 node → 1.0, 200 node → 0.0 (doğrusal ölçek)
+            simplicity = max(0.0, 1.0 - (total_nodes - 10) / 190)
+
+            # Çok fazla arc varsa (spaghetti) ayrıca cezalandır
             if arcs > total_nodes * 3:
                 simplicity *= 0.8
             

@@ -4,81 +4,6 @@
   gap: var(--space-lg);
 }
 
-.controlPanel {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  padding: var(--space-lg);
-}
-
-.controlRow {
-  display: flex;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-  align-items: end;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  min-width: 160px;
-}
-
-.field span {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.field input {
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-2);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 13px;
-}
-
-.fieldHelper {
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-
-.btnVariant {
-  appearance: none;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  padding: var(--space-md) var(--space-lg);
-  border-radius: var(--radius-2);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.btnVariant:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-  box-shadow: var(--shadow-elevation-2);
-}
-
-.btnVariant:disabled {
-  background-color: var(--text-disabled);
-  cursor: not-allowed;
-}
-
-.errorBox {
-  background-color: rgba(211, 52, 56, 0.1);
-  border: 1px solid var(--error);
-  border-radius: var(--radius-3);
-  padding: var(--space-md);
-  color: var(--error);
-  font-size: 13px;
-}
 
 /* Stats Grid */
 .statsGrid {
@@ -153,7 +78,7 @@
   text-align: center;
 }
 
-.variantInfo {
+.variantInfo, .variantBody {
   display: flex;
   flex-direction: column;
   gap: 6px;

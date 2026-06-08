@@ -1,235 +1,123 @@
 .discoveryTab {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--sp-20);
 }
 
-/* Control Panel */
-.controlPanel {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  padding: var(--space-lg);
-}
-
-.controlRow {
-  display: flex;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-  align-items: end;
-}
-
-.field {
+/* Result container */
+.discoveryResult {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  min-width: 160px;
+  gap: var(--sp-16);
 }
 
-.field span {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.field input,
-.field select {
-  padding: var(--space-sm) var(--space-md);
+/* Result header bar */
+.resultHeaderBar {
+  background: var(--bg-surface);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-2);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 13px;
-}
-
-.field input:disabled,
-.field select:disabled {
-  background-color: var(--bg-tertiary);
-  color: var(--text-disabled);
-  cursor: not-allowed;
-}
-
-.fieldHelper {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
-
-.btnDiscovery {
-  appearance: none;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  padding: var(--space-md) var(--space-lg);
-  border-radius: var(--radius-2);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.btnDiscovery:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-  box-shadow: var(--shadow-elevation-2);
-}
-
-.btnDiscovery:disabled {
-  background-color: var(--text-disabled);
-  cursor: not-allowed;
-}
-
-/* Error Box */
-.errorBox {
-  background-color: rgba(211, 52, 56, 0.1);
-  border: 1px solid var(--error);
-  border-radius: var(--radius-3);
-  padding: var(--space-md);
-  color: var(--error);
-  font-size: 13px;
-}
-
-/* Result Panel */
-.resultPanel {
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  padding: var(--space-lg);
-}
-
-.resultHeader {
-  margin-bottom: var(--space-lg);
-}
-
-.resultHeader h3 {
-  margin-bottom: var(--space-sm);
-  color: var(--success);
-}
-
-.resultMeta {
+  border-radius: var(--r-8);
+  padding: var(--sp-20);
   display: flex;
-  gap: var(--space-sm);
-}
-
-.badge {
-  display: inline-block;
-  background-color: var(--primary-light);
-  color: var(--primary);
-  padding: 4px 10px;
-  border-radius: var(--radius-2);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-/* Model Viewer */
-.modelViewer {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--space-md);
+  justify-content: space-between;
+  gap: var(--sp-16);
+  box-shadow: var(--shadow-2);
 }
 
-.petriNetImage {
-  max-width: 100%;
-  height: auto;
-  max-height: 600px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  background-color: white;
+.resultHeaderLeft h3 {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: var(--sp-8);
 }
 
-.modelCaption {
-  font-size: 13px;
-  color: var(--text-secondary);
-  text-align: center;
+.resultBadges {
+  display: flex;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
 }
 
-/* Algo Hint */
-.algoHint {
-  margin-top: var(--space-md);
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-/* Overall Score */
-.overallScore {
+.overallScoreBox {
   display: flex;
   align-items: baseline;
-  gap: var(--space-sm);
-  padding: var(--space-lg);
-  background: linear-gradient(135deg, var(--primary-light), transparent);
-  border: 1px solid var(--primary);
-  border-radius: var(--radius-3);
-  margin-bottom: var(--space-lg);
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.overallLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  flex: 1;
-}
-
-.overallValue {
-  font-size: 40px;
+.overallScoreValue {
+  font-size: 48px;
   font-weight: 700;
   color: var(--primary);
   line-height: 1;
 }
 
-.overallSub {
-  font-size: 18px;
+.overallScoreSub {
+  font-size: 16px;
   color: var(--text-tertiary);
 }
 
-/* Metrics Grid */
+/* Metrics grid */
 .metricsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-md);
-  margin-bottom: var(--space-lg);
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-12);
+}
+
+@media (max-width: 900px) {
+  .metricsGrid { grid-template-columns: repeat(2, 1fr); }
 }
 
 .metricCard {
-  background-color: var(--bg-secondary);
+  background: var(--bg-surface);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-3);
-  padding: var(--space-md);
+  border-top: 3px solid transparent;
+  border-radius: var(--r-8);
+  padding: var(--sp-16);
+  box-shadow: var(--shadow-2);
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--sp-6);
+}
+
+.metricTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .metricLabel {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text-secondary);
+  letter-spacing: .5px;
+  color: var(--text-tertiary);
+}
+
+.metricWeight {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(0,0,0,.05);
 }
 
 .metricValue {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   line-height: 1;
 }
 
-.metricBar {
+.metricBarWrap {
   height: 6px;
-  background-color: var(--border-light);
+  background: var(--border-light);
   border-radius: 3px;
   overflow: hidden;
 }
 
-.metricFill {
+.metricBarFill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.6s ease;
+  transition: width .6s ease;
+  min-width: 2px;
 }
 
 .metricDesc {
@@ -238,43 +126,25 @@
   line-height: 1.4;
 }
 
-/* Model Viewer */
-.modelViewer h4 {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--space-md);
-}
-
-/* Info Panel */
-.infoPanel {
-  background-color: var(--primary-light);
-  border: 1px solid var(--primary);
-  border-radius: var(--radius-3);
-  padding: var(--space-lg);
-  color: var(--primary-dark);
-}
-
-.infoPanel h3 {
-  margin-bottom: var(--space-md);
-}
-
-.infoPanel p {
-  margin-bottom: var(--space-md);
-  line-height: 1.6;
-}
-
-.infoPanel ul {
-  list-style: none;
-  padding: 0;
+/* Petri Net */
+.petriNetMeta {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--sp-6);
+  margin-bottom: var(--sp-16);
+  flex-wrap: wrap;
 }
 
-.infoPanel li {
-  font-size: 13px;
-  line-height: 1.6;
+.petriNetImageWrap {
+  background: var(--bg-surface2);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-6);
+  padding: var(--sp-12);
+  display: flex;
+  justify-content: center;
+}
+
+.petriNetImage {
+  max-width: 100%;
+  height: auto;
+  max-height: 600px;
 }
