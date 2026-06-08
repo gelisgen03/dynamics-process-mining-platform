@@ -17,12 +17,61 @@ function getActivityMeta(activity) {
   return { color: "#8764b8" };
 }
 
+function fmtWait(hours) {
+  if (hours === null || hours === undefined) return null;
+  if (hours < 1)   return `${Math.round(hours * 60)} dk`;
+  if (hours < 24)  return `${hours.toFixed(1)} saat`;
+  if (hours < 720) return `${(hours / 24).toFixed(1)} gün`;
+  return `${(hours / 720).toFixed(1)} ay`;
+}
+
+function SlowCaseRow({ c, isOpen, onToggle }) {
+  const maxWait = Math.max(...(c.steps ?? []).map(s => s.wait_hours ?? 0), 1);
+  return (
+    <div className={`slowCaseCard ${isOpen ? "slowCaseCardOpen" : ""}`}>
+      <button className="slowCaseHeader" onClick={onToggle}>
+        <span className="caseIdCell">{c.case_id}</span>
+        <span className="slowCaseDur" style={{ color: "#c50f1f" }}>{fmtDays(c.duration_days)}</span>
+        <span className="slowCaseChevron">{isOpen ? "▲" : "▼"}</span>
+      </button>
+      {isOpen && c.steps && (
+        <div className="slowCaseBody">
+          {c.steps.map((s, i) => {
+            const { color } = getActivityMeta(s.activity);
+            const label = fmtWait(s.wait_hours);
+            return (
+              <div className="slowStep" key={i}>
+                <span className="slowStepNum">{i + 1}</span>
+                <span className="slowStepName" style={{ color }}>{s.activity}</span>
+                {label ? (
+                  <>
+                    <div className="slowStepBarWrap">
+                      <div
+                        className="slowStepBar"
+                        style={{ width: `${((s.wait_hours ?? 0) / maxWait) * 100}%`, background: color }}
+                      />
+                    </div>
+                    <span className="slowStepWait" style={{ color }}>{label}</span>
+                  </>
+                ) : (
+                  <span className="slowStepLast">son adım</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PerformanceTab() {
   const [outcome, setOutcome]   = useState("all");
   const [caseLimit, setCaseLimit] = useState(500);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
   const [result, setResult]     = useState(null);
+  const [openCase, setOpenCase] = useState(null);
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -143,19 +192,16 @@ export default function PerformanceTab() {
           <div className="perfCaseGrid">
             <div className="sectionCard">
               <h3 className="sectionTitle">En Yavaş 5 Case</h3>
-              <table>
-                <thead>
-                  <tr><th>Case ID</th><th>Süre</th></tr>
-                </thead>
-                <tbody>
-                  {result.slowest_cases.map((c, i) => (
-                    <tr key={i}>
-                      <td className="caseIdCell">{c.case_id}</td>
-                      <td style={{ color: "#c50f1f", fontWeight: 600 }}>{fmtDays(c.duration_days)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="slowCaseList">
+                {result.slowest_cases.map((c) => (
+                  <SlowCaseRow
+                    key={c.case_id}
+                    c={c}
+                    isOpen={openCase === c.case_id}
+                    onToggle={() => setOpenCase(openCase === c.case_id ? null : c.case_id)}
+                  />
+                ))}
+              </div>
             </div>
             <div className="sectionCard">
               <h3 className="sectionTitle">En Hızlı 5 Case</h3>

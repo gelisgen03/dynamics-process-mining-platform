@@ -87,4 +87,30 @@ export const apiClient = {
     if (!res.ok) throw new Error("Karşılaştırma başarısız oldu");
     return res.json();
   },
+
+  // === AI Chat ===
+  async chat(message, context = "", history = []) {
+    const res = await fetch(`${API_BASE}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, context, history }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Agent yanıt vermedi");
+    }
+    return res.json();
+  },
+
+  // === Case Detail ===
+  async getCaseDetail(caseId) {
+    const res = await fetch(`${API_BASE}/api/case-detail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ case_id: String(caseId) }),
+    });
+    if (res.status === 404) throw new Error(`Case '${caseId}' bulunamadı`);
+    if (!res.ok) throw new Error("Case detay alınamadı");
+    return res.json();
+  },
 };

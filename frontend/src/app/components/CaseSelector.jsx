@@ -59,7 +59,7 @@ export default function CaseSelector({
         style={{ background: style.bg, border: `1px solid ${style.border}`, color: style.color }}
       >
         <span className="previewCount">{caseLimit.toLocaleString("tr-TR")}</span>
-        <span className="previewUnit"> case</span>
+        <span className="previewUnit"> Case işlenecek</span>
         {outcome !== "all" && (
           <span className="previewTotal"> · {label.toLowerCase()}</span>
         )}

@@ -6,6 +6,11 @@ from .comparison import ProcessComparison
 import pandas as pd
 import pm4py
 import os
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 router = APIRouter(prefix="/api", tags=["process-mining"])
 
@@ -484,16 +489,31 @@ def get_performance(body: dict):
         act_wait["avg_wait_hours"] = act_wait["avg_wait_hours"].round(2)
 
         # --- En yavaş / en hızlı 5 case ---
-        top_slow = (
-            case_stats.nlargest(5, "duration_days")
+        slow_ids = case_stats.nlargest(5, "duration_days")["case_id"].tolist()
+        top_slow = []
+        for cid in slow_ids:
+            dur = round(float(case_stats.loc[case_stats["case_id"] == cid, "duration_days"].iloc[0]), 2)
+            case_df = df_sorted[df_sorted["case_id"] == cid].sort_values("timestamp")
+            steps = []
+            for _, row in case_df.iterrows():
+                wh = row.get("wait_hours")
+                steps.append({
+                    "activity": row["activity"],
+                    "wait_hours": round(float(wh), 2) if pd.notna(wh) and float(wh) >= 0 else None,
+                })
+            top_slow.append({"case_id": cid, "duration_days": dur, "steps": steps})
+
+        # En fazla 1 tane 0.0 süreli case; geri kalanlar > 0
+        fastest_one = case_stats.nsmallest(1, "duration_days")[["case_id", "duration_days"]]
+        next_four   = (
+            case_stats[case_stats["duration_days"] > 0]
+            .nsmallest(4, "duration_days")
             [["case_id", "duration_days"]]
-            .assign(duration_days=lambda x: x["duration_days"].round(2))
-            .to_dict(orient="records")
         )
         top_fast = (
-            case_stats[case_stats["duration_days"] > 0]
-            .nsmallest(5, "duration_days")
-            [["case_id", "duration_days"]]
+            pd.concat([fastest_one, next_four])
+            .drop_duplicates(subset="case_id")
+            .head(5)
             .assign(duration_days=lambda x: x["duration_days"].round(2))
             .to_dict(orient="records")
         )
@@ -518,6 +538,105 @@ def get_performance(body: dict):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Performans analizi hatası: {str(e)}")
+
+
+# --- Case Detail (Inspector) ---
+@router.post("/case-detail")
+def get_case_detail(body: dict):
+    """
+    Tek bir case'in adım adım timeline'ını ve istatistiklerini döner.
+    Body: { "case_id": "173694" }
+    """
+    try:
+        case_id_raw = body.get("case_id", "")
+        if not case_id_raw:
+            raise HTTPException(status_code=400, detail="case_id gerekli")
+
+        # Tüm veriyi çek (case_limit yok, tek case arıyoruz)
+        response = get_logs(limit=50000, offset=0)
+        if hasattr(response, "error") and response.error:
+            raise HTTPException(status_code=400, detail=str(response.error))
+        data = response.data if hasattr(response, "data") else response.get("data", [])
+        if not data:
+            raise HTTPException(status_code=400, detail="Veri bulunamadı")
+
+        df = pd.DataFrame(data)
+        df = preprocess(df)
+
+        # Case ID string eşleşmesi
+        case_df = df[df["case_id"].astype(str) == str(case_id_raw)].copy()
+        if case_df.empty:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id_raw}' bulunamadı")
+
+        case_df = case_df.sort_values("timestamp").reset_index(drop=True)
+
+        # Bekleme sürelerini hesapla
+        case_df["next_ts"]    = case_df["timestamp"].shift(-1)
+        case_df["wait_hours"] = (
+            (case_df["next_ts"] - case_df["timestamp"]).dt.total_seconds() / 3600
+        )
+
+        total_hours = (case_df["timestamp"].max() - case_df["timestamp"].min()).total_seconds() / 3600
+        total_days  = total_hours / 24
+
+        # Adımlar
+        steps = []
+        for i, row in case_df.iterrows():
+            wh = row["wait_hours"]
+            steps.append({
+                "order":      i + 1,
+                "activity":   row["activity"],
+                "timestamp":  row["timestamp"].isoformat(),
+                "wait_hours": round(float(wh), 2) if pd.notna(wh) and float(wh) >= 0 else None,
+            })
+
+        # En uzun bekleme
+        valid_waits = case_df.dropna(subset=["wait_hours"])
+        if not valid_waits.empty:
+            max_wait_row   = valid_waits.loc[valid_waits["wait_hours"].idxmax()]
+            longest_wait   = {"activity": max_wait_row["activity"], "hours": round(float(max_wait_row["wait_hours"]), 2)}
+        else:
+            longest_wait   = None
+
+        # Dataset ortalamasıyla karşılaştırma
+        all_case_stats = (
+            df.groupby("case_id")["timestamp"]
+            .agg(start="min", end="max")
+            .reset_index()
+        )
+        all_case_stats["duration_days"] = (all_case_stats["end"] - all_case_stats["start"]).dt.total_seconds() / 86400
+        avg_days    = float(all_case_stats["duration_days"].mean())
+        median_days = float(all_case_stats["duration_days"].median())
+        pct_rank    = float((all_case_stats["duration_days"] <= total_days).mean() * 100)
+
+        # Bu case'in outcome'u
+        outcome = "Bilinmiyor"
+        if "A_ACCEPTED" in case_df["activity"].values:
+            outcome = "Kabul Edildi"
+        elif "A_DECLINED" in case_df["activity"].values:
+            outcome = "Reddedildi"
+
+        return {
+            "case_id":      str(case_id_raw),
+            "outcome":      outcome,
+            "total_hours":  round(total_hours, 2),
+            "total_days":   round(total_days, 2),
+            "step_count":   len(case_df),
+            "start_time":   case_df["timestamp"].min().isoformat(),
+            "end_time":     case_df["timestamp"].max().isoformat(),
+            "longest_wait": longest_wait,
+            "comparison": {
+                "avg_days":    round(avg_days, 2),
+                "median_days": round(median_days, 2),
+                "pct_rank":    round(pct_rank, 1),
+            },
+            "steps": steps,
+        }
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Case detay hatası: {str(e)}")
 
 
 # --- Variant Analysis ---
@@ -656,3 +775,68 @@ def get_metrics_endpoint(body: dict):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Metrik hesaplama hatası: {str(e)}")
+
+
+# --- AI Chat (Gemini) ---
+SYSTEM_PROMPT = """Sen bir süreç madenciliği (process mining) asistanısın. Türkçe yanıt veriyorsun.
+
+VERİ SETİ: BPI Challenge 2012 — bir bankanın kredi başvuru süreci.
+- A_ = başvuru adımları | W_ = iş akışı görevleri | O_ = teklif adımları
+- Metrikler: Fitness, Precision, Generalization, Simplicity
+- Algoritmalar: Inductive (fitness garantili), Alpha (klasik), Heuristics (gürültüye dayanıklı)
+
+YANIT KURALLARI — bunlara kesinlikle uy:
+1. Varsayılan yanıt: maksimum 2-3 madde, her biri 10 kelimeyi geçmez. Kullanıcı "detay", "açıkla", "daha fazla" derse genişlet.
+2. Her maddeye uygun emoji (⚠️ sorun, ✅ iyi, 🔁 döngü, ⏱ süre, 💡 öneri).
+3. Teknik terimleri Türkçe açıkla.
+4. Öneri dili yumuşak ve danışmanlık tonu olsun: "yapmalısınız" değil "düşünebilirsiniz", "zorunlu" değil "faydalı olabilir", "gerekir" değil "değerlendirilebilir".
+5. Öneriler somut olsun: "toplantı yapın" değil "geri arama ekibiyle haftada 1 kısa durum toplantısı düzenlemeyi düşünebilirsiniz".
+6. Analiz sonucu yapıştırılmışsa o veriye odaklan."""
+
+
+@router.post("/chat")
+def chat_with_agent(body: dict):
+    try:
+        api_key = os.getenv("GEMINI_API_KEY", "")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="GEMINI_API_KEY .env dosyasında tanımlı değil")
+
+        message = body.get("message", "").strip()
+        context = body.get("context", "")
+        history = body.get("history", [])
+
+        if not message:
+            raise HTTPException(status_code=400, detail="Mesaj boş olamaz")
+
+        full_message = message
+        if context:
+            full_message = f"Analiz sonuçları:\n{context}\n\nSorum: {message}"
+
+        # Sohbet geçmişini Gemini formatına çevir
+        contents = []
+        for h in history:
+            role = "user" if h.get("role") == "user" else "model"
+            contents.append(types.Content(role=role, parts=[types.Part(text=h.get("content", ""))]))
+        contents.append(types.Content(role="user", parts=[types.Part(text=full_message)]))
+
+        client = genai.Client(api_key=api_key)
+        for model_name in ("gemini-2.5-flash-preview-05-20", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=contents,
+                    config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+                )
+                return {"reply": response.text}
+            except Exception as model_err:
+                err_str = str(model_err)
+                if "NOT_FOUND" in err_str or "404" in err_str:
+                    continue
+                raise model_err
+
+        raise HTTPException(status_code=503, detail="Kullanılabilir Gemini modeli bulunamadı")
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent hatası: {str(e)}")

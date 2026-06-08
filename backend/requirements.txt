@@ -8,3 +8,7 @@ pandas
 
 # Utilities
 python-multipart
+python-dotenv
+
+# AI Agent
+google-genai

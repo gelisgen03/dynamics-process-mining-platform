@@ -9,6 +9,8 @@ import PerformanceTab from "./tabs/PerformanceTab";
 import ConformanceTab from "./tabs/ConformanceTab";
 import SettingsTab from "./tabs/SettingsTab";
 import IntegrationTab from "./tabs/IntegrationTab";
+import CaseInspectTab from "./tabs/CaseInspectTab";
+import ChatWidget from "./components/ChatWidget";
 
 const TABS = [
   {
@@ -77,6 +79,17 @@ const TABS = [
       </svg>
     ),
     component: PerformanceTab,
+    section: null,
+  },
+  {
+    key: "case-inspect",
+    label: "Case İncele",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 1a2 2 0 0 1 2 2v1h2.5A1.5 1.5 0 0 1 14 5.5v8A1.5 1.5 0 0 1 12.5 15h-9A1.5 1.5 0 0 1 2 13.5v-8A1.5 1.5 0 0 1 3.5 4H6V3a2 2 0 0 1 2-2Zm0 1a1 1 0 0 0-1 1v1h2V3a1 1 0 0 0-1-1ZM3.5 5a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5H3.5Zm1 2h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1Zm0 2h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1Zm0 2h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1Z"/>
+      </svg>
+    ),
+    component: CaseInspectTab,
     section: null,
   },
   {
@@ -183,6 +196,7 @@ export default function Dashboard() {
           </main>
         </div>
       </div>
+      <ChatWidget />
     </div>
   );
 }

@@ -3,12 +3,64 @@ import { apiClient } from "../api/client";
 import CaseSelector from "../components/CaseSelector";
 import "./VariantTab.css";
 
+function getActivityColor(activity) {
+  if (activity?.startsWith("A_")) return { bg: "#dbeafe", color: "#1d4ed8" };
+  if (activity?.startsWith("O_")) return { bg: "#dcfce7", color: "#15803d" };
+  if (activity?.startsWith("W_")) return { bg: "#fee2e2", color: "#b91c1c" };
+  return { bg: "#f3e8ff", color: "#7e22ce" };
+}
+
+function TraceSteps({ trace }) {
+  const steps = trace.split(" → ");
+  return (
+    <div className="traceSteps">
+      {steps.map((step, i) => {
+        const { bg, color } = getActivityColor(step);
+        return (
+          <span key={i} className="traceStepWrap">
+            <span className="traceChip" style={{ background: bg, color }}>{step}</span>
+            {i < steps.length - 1 && <span className="traceArrow">→</span>}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function VariantCard({ v, maxFreq, isOpen, onToggle }) {
+  const steps = v.trace.split(" → ");
+  const preview = steps.slice(0, 3).join(" → ") + (steps.length > 3 ? ` → ... (+${steps.length - 3})` : "");
+  return (
+    <div className={`variantCard ${isOpen ? "variantCardOpen" : ""}`}>
+      <button className="variantCardHeader" onClick={onToggle}>
+        <span className="variantRank">#{v.rank}</span>
+        <span className="variantPreview">{preview}</span>
+        <span className="variantStats">
+          <span className="variantCount">{v.frequency} case</span>
+          <span className="variantPct">{v.percentage}%</span>
+        </span>
+        <span className="variantChevron">{isOpen ? "▲" : "▼"}</span>
+      </button>
+      <div className="variantBarWrap">
+        <div className="variantBarFill" style={{ width: `${(v.frequency / maxFreq) * 100}%` }} />
+      </div>
+      {isOpen && (
+        <div className="variantCardBody">
+          <div className="traceStepCount">{steps.length} adım</div>
+          <TraceSteps trace={v.trace} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function VariantTab() {
   const [outcome, setOutcome]     = useState("all");
   const [caseLimit, setCaseLimit] = useState(500);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState(null);
   const [result, setResult]       = useState(null);
+  const [openVariant, setOpenVariant] = useState(null);
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -84,22 +136,13 @@ export default function VariantTab() {
             <h3 className="sectionTitle">En Sık Görülen 10 Trace Varyantı</h3>
             <div className="variantList">
               {result.top_variants.map((v) => (
-                <div className="variantRow" key={v.rank}>
-                  <div className="variantRank">#{v.rank}</div>
-                  <div className="variantBody">
-                    <div className="variantTrace">{v.trace}</div>
-                    <div className="distBarWrap" style={{ marginTop: 4 }}>
-                      <div
-                        className="distBar"
-                        style={{ width: `${(v.frequency / maxFreq) * 100}%`, background: "#0078d4" }}
-                      />
-                    </div>
-                  </div>
-                  <div className="variantStats">
-                    <span className="variantCount">{v.frequency} case</span>
-                    <span className="distPct">{v.percentage}%</span>
-                  </div>
-                </div>
+                <VariantCard
+                  key={v.rank}
+                  v={v}
+                  maxFreq={maxFreq}
+                  isOpen={openVariant === v.rank}
+                  onToggle={() => setOpenVariant(openVariant === v.rank ? null : v.rank)}
+                />
               ))}
             </div>
           </div>
