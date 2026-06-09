@@ -1,6 +1,9 @@
 # 🧠 Dynamics Process Mining Platform
 This project is a process mining and workflow analysis platform that integrates with Microsoft Dynamics 365. It extracts event logs, discovers process models, and analyzes business workflows to identify inefficiencies and bottlenecks.
 
+<img width="1917" height="872" alt="image" src="https://github.com/user-attachments/assets/ac8194b3-2b76-480e-9875-2b53f99685a1" />
+
+
 ## 📌 Description
 Coming soon ...
 
