@@ -8,7 +8,6 @@ import VariantTab from "./tabs/VariantTab";
 import PerformanceTab from "./tabs/PerformanceTab";
 import ConformanceTab from "./tabs/ConformanceTab";
 import SettingsTab from "./tabs/SettingsTab";
-import IntegrationTab from "./tabs/IntegrationTab";
 import CaseInspectTab from "./tabs/CaseInspectTab";
 import ChatWidget from "./components/ChatWidget";
 
@@ -105,18 +104,6 @@ const TABS = [
     section: null,
   },
   {
-    key: "integration",
-    label: "Platform Hakkında",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17 8C8 10 5.9 16.17 3.82 19.82L5.71 21 7 19c.97.64 2.14 1 3.36 1 2.3 0 4.31-1.22 5.44-3.05C17.35 16.15 18 14.16 18 12c0-.68-.06-1.35-.17-2H17zM11 8V2H9v2H7v2h2v2h2z" opacity=".3"/>
-        <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1-6h2v2h-2v-2zm0-8h2v6h-2V6z"/>
-      </svg>
-    ),
-    component: IntegrationTab,
-    section: "SİSTEM",
-  },
-  {
     key: "settings",
     label: "Sistem Bilgileri",
     icon: (
@@ -126,7 +113,7 @@ const TABS = [
       </svg>
     ),
     component: SettingsTab,
-    section: null,
+    section: "SİSTEM",
   },
 ];
 
