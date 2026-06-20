@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { apiClient } from "../api/client";
 import CaseSelector from "../components/CaseSelector";
+import { useDataSource } from "../context/DataSourceContext";
 import "./ComparisonTab.css";
 
 const ALGO_LABELS = {
@@ -19,8 +20,9 @@ const METRICS = [
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
 
 export default function ComparisonTab() {
+  const { tableName } = useDataSource();
   const [outcome, setOutcome]     = useState("all");
-  const [caseLimit, setCaseLimit] = useState(500);
+  const [caseLimit, setCaseLimit] = useState(100);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState(null);
   const [result, setResult]       = useState(null);
@@ -33,7 +35,8 @@ export default function ComparisonTab() {
       const res = await apiClient.compareModels(
         ["inductive", "alpha", "heuristics"],
         outcome,
-        caseLimit
+        caseLimit,
+        tableName
       );
       setResult(res);
     } catch (err) {

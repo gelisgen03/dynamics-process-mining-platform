@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { apiClient } from "../api/client";
 import CaseSelector from "../components/CaseSelector";
+import { useDataSource } from "../context/DataSourceContext";
 import "./PerformanceTab.css";
 
 function fmtDays(days) {
@@ -66,8 +67,9 @@ function SlowCaseRow({ c, isOpen, onToggle }) {
 }
 
 export default function PerformanceTab() {
+  const { tableName } = useDataSource();
   const [outcome, setOutcome]   = useState("all");
-  const [caseLimit, setCaseLimit] = useState(500);
+  const [caseLimit, setCaseLimit] = useState(100);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
   const [result, setResult]     = useState(null);
@@ -78,7 +80,7 @@ export default function PerformanceTab() {
     setError(null);
     setResult(null);
     try {
-      const res = await apiClient.getPerformance(outcome, caseLimit);
+      const res = await apiClient.getPerformance(outcome, caseLimit, tableName);
       setResult(res);
     } catch (err) {
       setError(err.message || "Performans analizi başarısız");
@@ -122,10 +124,10 @@ export default function PerformanceTab() {
           {/* Özet KPI Kartları */}
           <div className="statsGrid">
             {[
-              { label: "Ortalama Süre", value: fmtDays(result.summary.avg_days), sub: "case başına ortalama" },
-              { label: "Medyan Süre",   value: fmtDays(result.summary.median_days), sub: "ortanca case süresi" },
               { label: "En Kısa",       value: fmtDays(result.summary.min_days), sub: "en hızlı tamamlanan" },
               { label: "En Uzun",       value: fmtDays(result.summary.max_days), sub: "en yavaş tamamlanan" },
+              { label: "Ortalama Süre", value: fmtDays(result.summary.avg_days), sub: "case başına ortalama" },
+              
             ].map((s) => (
               <div className="statCard" key={s.label}>
                 <div className="statLabel">{s.label}</div>
@@ -133,59 +135,6 @@ export default function PerformanceTab() {
                 <div className="statHelper">{s.sub}</div>
               </div>
             ))}
-          </div>
-
-          {/* Süre Dağılımı */}
-          <div className="sectionCard">
-            <h3 className="sectionTitle">Case Süresi Dağılımı</h3>
-            <div className="distList">
-              {result.distribution.map((d) => (
-                <div className="distRow" key={d.bucket}>
-                  <div className="distLabel">{d.bucket}</div>
-                  <div className="distBarWrap">
-                    <div
-                      className="distBar"
-                      style={{ width: `${(d.count / maxDist) * 100}%`, background: "#0078d4" }}
-                    />
-                  </div>
-                  <div className="distStats">
-                    <span className="distCount">{d.count}</span>
-                    <span className="distPct">{d.percentage}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Darboğaz Analizi */}
-          <div className="sectionCard">
-            <h3 className="sectionTitle">Darboğaz Analizi — Aktivite Başına Bekleme Süresi</h3>
-            <p className="sectionHint">
-              Yüksek değer = darboğaz noktası. A_ başvuru, O_ teklif, W_ iş akışı görevlerini temsil eder.
-            </p>
-            <div className="waitList">
-              {result.activity_wait.map((a, i) => {
-                const meta = getActivityMeta(a.activity);
-                return (
-                  <div className="distRow" key={i}>
-                    <div className="distLabel">{a.activity}</div>
-                    <div className="distBarWrap">
-                      <div
-                        className="distBar"
-                        style={{ width: `${(a.avg_wait_hours / maxWait) * 100}%`, background: meta.color }}
-                      />
-                    </div>
-                    <div className="distStats">
-                      <span className="distCount" style={{ color: meta.color }}>
-                        {a.avg_wait_hours >= 24
-                          ? `${(a.avg_wait_hours / 24).toFixed(1)} gün`
-                          : `${a.avg_wait_hours.toFixed(1)} saat`}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </div>
 
           {/* En Yavaş / En Hızlı */}
@@ -218,6 +167,57 @@ export default function PerformanceTab() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* Darboğaz Analizi */}
+          <div className="sectionCard">
+            <h3 className="sectionTitle">Darboğaz Analizi — Aktivite Başına Bekleme Süresi</h3>
+            
+            <div className="waitList">
+              {result.activity_wait.map((a, i) => {
+                const meta = getActivityMeta(a.activity);
+                return (
+                  <div className="distRow" key={i}>
+                    <div className="distLabel">{a.activity}</div>
+                    <div className="distBarWrap">
+                      <div
+                        className="distBar"
+                        style={{ width: `${(a.avg_wait_hours / maxWait) * 100}%`, background: meta.color }}
+                      />
+                    </div>
+                    <div className="distStats">
+                      <span className="distCount" style={{ color: meta.color }}>
+                        {a.avg_wait_hours >= 24
+                          ? `${(a.avg_wait_hours / 24).toFixed(1)} gün`
+                          : `${a.avg_wait_hours.toFixed(1)} saat`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Süre Dağılımı */}
+          <div className="sectionCard">
+            <h3 className="sectionTitle">Case Süresi Dağılımı</h3>
+            <div className="distList">
+              {result.distribution.map((d) => (
+                <div className="distRow" key={d.bucket}>
+                  <div className="distLabel">{d.bucket}</div>
+                  <div className="distBarWrap">
+                    <div
+                      className="distBar"
+                      style={{ width: `${(d.count / maxDist) * 100}%`, background: "#0078d4" }}
+                    />
+                  </div>
+                  <div className="distStats">
+                    <span className="distCount">{d.count}</span>
+                    <span className="distPct">{d.percentage}%</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </>

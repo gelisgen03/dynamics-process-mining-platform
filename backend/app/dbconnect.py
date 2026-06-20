@@ -21,21 +21,23 @@ else:
         print(f"Supabase bağlantı hatası: {e}")
 
 # --- Veri Erişim Fonksiyonları ---
-def get_all_logs():
+DEFAULT_TABLE = "event_log_data"
+
+def get_all_logs(table_name: str = DEFAULT_TABLE):
     if supabase:
-        return supabase.table('event_log_data').select("*").execute()
+        return supabase.table(table_name).select("*").execute()
     return {"data": [], "error": "Supabase client not initialized"}
 
 SUPABASE_PAGE_LIMIT = 1000  # Supabase per-request hard cap
 
-def get_logs(limit: int = 100, offset: int = 0):
+def get_logs(limit: int = 100, offset: int = 0, table_name: str = DEFAULT_TABLE):
     """Supabase'den veri çeker. limit>1000 ise otomatik sayfalama yapar."""
     if not supabase:
         return {"data": [], "error": "Supabase client not initialized"}
 
     if limit <= SUPABASE_PAGE_LIMIT:
         try:
-            response = supabase.table('event_log_data').select("*").limit(limit).offset(offset).execute()
+            response = supabase.table(table_name).select("*").limit(limit).offset(offset).execute()
             return response
         except Exception as e:
             return {"data": [], "error": str(e)}
@@ -48,7 +50,7 @@ def get_logs(limit: int = 100, offset: int = 0):
     while remaining > 0:
         batch_size = min(remaining, SUPABASE_PAGE_LIMIT)
         try:
-            response = supabase.table('event_log_data').select("*").limit(batch_size).offset(current_offset).execute()
+            response = supabase.table(table_name).select("*").limit(batch_size).offset(current_offset).execute()
             batch = response.data if hasattr(response, 'data') else []
             if not batch:
                 break

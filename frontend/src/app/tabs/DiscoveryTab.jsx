@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { apiClient } from "../api/client";
 import CaseSelector from "../components/CaseSelector";
+import { useDataSource } from "../context/DataSourceContext";
 import "./DiscoveryTab.css";
 
 const API_BASE = "http://localhost:8000";
@@ -19,9 +20,10 @@ const METRICS = [
 ];
 
 export default function DiscoveryTab() {
+  const { tableName } = useDataSource();
   const [algorithm, setAlgorithm]   = useState("heuristics");
   const [outcome, setOutcome]       = useState("all");
-  const [caseLimit, setCaseLimit]   = useState(500);
+  const [caseLimit, setCaseLimit]   = useState(100);
   const [threshold, setThreshold]   = useState(0.5);
   const [loading, setLoading]       = useState(false);
   const [error, setError]         = useState(null);
@@ -32,7 +34,7 @@ export default function DiscoveryTab() {
     setError(null);
     setResult(null);
     try {
-      const res = await apiClient.discoverProcess(algorithm, outcome, caseLimit, threshold);
+      const res = await apiClient.discoverProcess(algorithm, outcome, caseLimit, threshold, tableName);
       setResult({ ...res, timestamp: Date.now() });
     } catch (err) {
       setError(err.message || "Discovery başarısız");
@@ -49,7 +51,7 @@ export default function DiscoveryTab() {
           <label className="field">
             <span>Algoritma</span>
             <select value={algorithm} onChange={(e) => setAlgorithm(e.target.value)} disabled={loading}>
-              <option value="heuristics">Heuristics Miner (Önerilen)</option>
+              <option value="heuristics">Heuristics Miner </option>
               <option value="inductive">Inductive Miner</option>
               <option value="alpha">Alpha Miner</option>
             </select>
@@ -153,10 +155,84 @@ export default function DiscoveryTab() {
             )}
             <div className="petriNetImageWrap">
               <img
-                src={`${API_BASE}/outputs/${result.image_filename}?t=${result.timestamp ?? Date.now()}`}
+                key={result.timestamp}
+                src={`${API_BASE}/api/petri-image/${result.image_filename}?t=${result.timestamp}`}
                 alt="Petri Net Model"
                 className="petriNetImage"
               />
+            </div>
+
+            {/* Legend */}
+            <div className="petriLegend">
+              <div className="petriLegendItem">
+                <svg width="32" height="28" viewBox="0 0 32 28">
+                  <circle cx="16" cy="14" r="11" fill="white" stroke="#333" strokeWidth="1.8"/>
+                </svg>
+                <div>
+                  <div className="petriLegendLabel">Yer (Place)</div>
+                  <div className="petriLegendDesc">Sürecin o anki durumunu temsil eder</div>
+                </div>
+              </div>
+
+              <div className="petriLegendItem">
+                <svg width="32" height="28" viewBox="0 0 32 28">
+                  <circle cx="16" cy="14" r="11" fill="white" stroke="#333" strokeWidth="1.8"/>
+                  <circle cx="16" cy="14" r="4.5" fill="#333"/>
+                </svg>
+                <div>
+                  <div className="petriLegendLabel">Token (Jeton)</div>
+                  <div className="petriLegendDesc">Başlangıç/bitiş yerindeki işaretleyici</div>
+                </div>
+              </div>
+
+              <div className="petriLegendItem">
+                <svg width="32" height="28" viewBox="0 0 32 28">
+                  <rect x="2" y="8" width="28" height="12" rx="1" fill="white" stroke="#333" strokeWidth="1.8"/>
+                  <text x="16" y="18" textAnchor="middle" fontSize="7" fill="#333" fontFamily="sans-serif">aktivite</text>
+                </svg>
+                <div>
+                  <div className="petriLegendLabel">Geçiş (Transition)</div>
+                  <div className="petriLegendDesc">Gerçekleşen bir aktivite / iş adımı</div>
+                </div>
+              </div>
+
+              <div className="petriLegendItem">
+                <svg width="32" height="28" viewBox="0 0 32 28">
+                  <rect x="8" y="8" width="16" height="12" rx="1" fill="#333" stroke="#333" strokeWidth="1.5"/>
+                </svg>
+                <div>
+                  <div className="petriLegendLabel">Sessiz Geçiş (τ)</div>
+                  <div className="petriLegendDesc">Görünmez başlangıç veya bitiş adımı</div>
+                </div>
+              </div>
+
+              <div className="petriLegendItem">
+                <svg width="32" height="28" viewBox="0 0 32 28">
+                  <defs>
+                    <marker id="lg-arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+                    </marker>
+                  </defs>
+                  <line x1="2" y1="14" x2="25" y2="14" stroke="#555" strokeWidth="1.8" markerEnd="url(#lg-arr)"/>
+                </svg>
+                <div>
+                  <div className="petriLegendLabel">Ark (Arc)</div>
+                  <div className="petriLegendDesc">Yer → Geçiş veya Geçiş → Yer akışı</div>
+                </div>
+              </div>
+
+              <div className="petriLegendItem">
+                <svg width="32" height="28" viewBox="0 0 32 28">
+                  <circle cx="8" cy="14" r="7" fill="white" stroke="#333" strokeWidth="1.8"/>
+                  <circle cx="8" cy="14" r="3" fill="#333"/>
+                  <line x1="15" y1="14" x2="22" y2="14" stroke="#555" strokeWidth="1.5"/>
+                  <circle cx="26" cy="14" r="4" fill="none" stroke="#333" strokeWidth="4"/>
+                </svg>
+                <div>
+                  <div className="petriLegendLabel">Başlangıç → Bitiş</div>
+                  <div className="petriLegendDesc">Sol: token'lı yer · Sağ: çift çizgili yer</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

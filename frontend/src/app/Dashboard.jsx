@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./Dashboard.css";
+import { useDataSource } from "./context/DataSourceContext";
 import HomeTab from "./tabs/HomeTab";
 import DataTab from "./tabs/DataTab";
 import DiscoveryTab from "./tabs/DiscoveryTab";
@@ -9,6 +10,7 @@ import PerformanceTab from "./tabs/PerformanceTab";
 import ConformanceTab from "./tabs/ConformanceTab";
 import SettingsTab from "./tabs/SettingsTab";
 import CaseInspectTab from "./tabs/CaseInspectTab";
+import AppInsightsTab from "./tabs/AppInsightsTab";
 import ChatWidget from "./components/ChatWidget";
 
 const TABS = [
@@ -33,18 +35,7 @@ const TABS = [
       </svg>
     ),
     component: DataTab,
-    section: "ANALİZ",
-  },
-  {
-    key: "discovery",
-    label: "Süreç Keşfi",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099ZM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0Z"/>
-      </svg>
-    ),
-    component: DiscoveryTab,
-    section: null,
+    section: "SÜREÇ ANALİZİ",
   },
   {
     key: "comparison",
@@ -55,8 +46,20 @@ const TABS = [
       </svg>
     ),
     component: ComparisonTab,
-    section: null,
+    section: "DİĞER ANALİZLER",
   },
+  {
+    key: "discovery",
+    label: "Süreç Keşfi",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099ZM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0Z"/>
+      </svg>
+    ),
+    component: DiscoveryTab,
+    section: "SÜREÇ ANALİZİ",
+  },
+ 
   {
     key: "variants",
     label: "Varyant Analizi",
@@ -66,7 +69,7 @@ const TABS = [
       </svg>
     ),
     component: VariantTab,
-    section: null,
+    section: "SÜREÇ ANALİZİ",
   },
   {
     key: "performance",
@@ -78,18 +81,7 @@ const TABS = [
       </svg>
     ),
     component: PerformanceTab,
-    section: null,
-  },
-  {
-    key: "case-inspect",
-    label: "Case İncele",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M8 1a2 2 0 0 1 2 2v1h2.5A1.5 1.5 0 0 1 14 5.5v8A1.5 1.5 0 0 1 12.5 15h-9A1.5 1.5 0 0 1 2 13.5v-8A1.5 1.5 0 0 1 3.5 4H6V3a2 2 0 0 1 2-2Zm0 1a1 1 0 0 0-1 1v1h2V3a1 1 0 0 0-1-1ZM3.5 5a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5H3.5Zm1 2h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1Zm0 2h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1Zm0 2h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1Z"/>
-      </svg>
-    ),
-    component: CaseInspectTab,
-    section: null,
+    section: "SÜREÇ ANALİZİ",
   },
   {
     key: "conformance",
@@ -101,7 +93,29 @@ const TABS = [
       </svg>
     ),
     component: ConformanceTab,
-    section: null,
+    section: "DİĞER ANALİZLER",
+  },
+  {
+    key: "case-inspect",
+    label: "Case İncele",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 1a2 2 0 0 1 2 2v1h2.5A1.5 1.5 0 0 1 14 5.5v8A1.5 1.5 0 0 1 12.5 15h-9A1.5 1.5 0 0 1 2 13.5v-8A1.5 1.5 0 0 1 3.5 4H6V3a2 2 0 0 1 2-2Zm0 1a1 1 0 0 0-1 1v1h2V3a1 1 0 0 0-1-1ZM3.5 5a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5H3.5Zm1 2h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1Zm0 2h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1Zm0 2h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1Z"/>
+      </svg>
+    ),
+    component: CaseInspectTab,
+    section: "SÜREÇ ANALİZİ",
+  },
+  {
+    key: "appinsights",
+    label: "Canlı D365 Bağlantısı",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.05 8.5h2.41c.06 1.36.34 2.62.78 3.66A6.51 6.51 0 0 1 1.05 8.5Zm2.41-1H1.05a6.51 6.51 0 0 1 3.19-4.16c-.44 1.04-.72 2.3-.78 3.66Zm4.04 6.96c-.6-.2-1.27-1.3-1.62-3.13a13.4 13.4 0 0 1-.16-1.83h1.78v4.96Zm0-5.96H5.72c.02-.66.08-1.28.16-1.83.35-1.83 1.02-2.93 1.62-3.13V7.5Zm1 .96h1.78c-.03.66-.09 1.28-.16 1.83-.36 1.83-1.02 2.93-1.62 3.13V8.46Zm0-1.96V1.54c.6.2 1.26 1.3 1.62 3.13.07.55.13 1.17.16 1.83H8.5Zm3.26 1h2.41a6.51 6.51 0 0 1-3.19 4.16c.44-1.04.72-2.3.78-3.66Zm0-1c-.06-1.36-.34-2.62-.78-3.66a6.51 6.51 0 0 1 3.19 4.16h-2.41Z"/>
+      </svg>
+    ),
+    component: AppInsightsTab,
+    section: "CANLI VERİ",
   },
   {
     key: "settings",
@@ -117,50 +131,68 @@ const TABS = [
   },
 ];
 
+// Sidebar grup sırası. Supabase tabanlı çekirdek analiz önce, sonra diğer
+// analizler, sonra canlı Dynamics, en sonda sistem. Home (section yok) en üstte.
+const NAV_SECTIONS = ["SÜREÇ ANALİZİ", "DİĞER ANALİZLER", "CANLI VERİ", "SİSTEM"];
+
 export default function Dashboard() {
   const [activeKey, setActiveKey] = useState("home");
+  const [mountedKeys, setMountedKeys] = useState(() => new Set(["home"]));
+  const { source, sources, setTableName } = useDataSource();
   const activeTab = TABS.find((t) => t.key === activeKey) ?? TABS[0];
-  const ActiveComponent = activeTab.component;
 
-  let lastSection = undefined;
+  const navigateTo = (key) => {
+    setMountedKeys((prev) => new Set([...prev, key]));
+    setActiveKey(key);
+  };
+
+  const navItem = (t) => (
+    <button
+      key={t.key}
+      type="button"
+      className={`navItem ${t.key === activeKey ? "navItemActive" : ""}`}
+      onClick={() => navigateTo(t.key)}
+    >
+      <span className="navIcon">{t.icon}</span>
+      <span className="navLabel">{t.label}</span>
+    </button>
+  );
+  const topTabs = TABS.filter((t) => !t.section && t.key !== "home");
 
   return (
     <div className="dash">
       <aside className="dashSidebar">
-        <div className="dashBrand">
+        <button
+          type="button"
+          className={`dashBrand ${activeKey === "home" ? "dashBrandActive" : ""}`}
+          onClick={() => navigateTo("home")}
+          aria-label="Ana sayfaya git"
+        >
           <div className="brandLogoSvg">
             <img src="/proccesminnig_logo.png" alt="Process Insights" width="96" height="96" style={{ objectFit: "contain" }} />
           </div>
           <div className="brandText">
             <div className="brandName">Process Insights</div>
           </div>
-        </div>
+        </button>
 
         <nav className="dashNav" aria-label="Ana Menü">
-          {TABS.map((t) => {
-            const showSection = t.section !== undefined && t.section !== lastSection;
-            if (showSection) lastSection = t.section;
+          {topTabs.map(navItem)}
+          {NAV_SECTIONS.map((sec) => {
+            const items = TABS.filter((t) => t.section === sec);
+            if (items.length === 0) return null;
             return (
-              <div key={t.key}>
-                {showSection && t.section && (
-                  <div className="navSection">{t.section}</div>
-                )}
-                {showSection && t.section && <div className="navDivider" />}
-                <button
-                  type="button"
-                  className={`navItem ${t.key === activeKey ? "navItemActive" : ""}`}
-                  onClick={() => setActiveKey(t.key)}
-                >
-                  <span className="navIcon">{t.icon}</span>
-                  <span className="navLabel">{t.label}</span>
-                </button>
+              <div key={sec} className="navGroup">
+                <div className="navSection">{sec}</div>
+                <div className="navDivider" />
+                {items.map(navItem)}
               </div>
             );
           })}
         </nav>
 
         <div className="sidebarFooter">
-          <div className="footerVersion">BPI Challenge 2012 · v2.0</div>
+          <div className="footerVersion">Process Insights · v2.0</div>
         </div>
       </aside>
 
@@ -171,15 +203,38 @@ export default function Dashboard() {
             <span className="breadcrumbSep">›</span>
             <span className="breadcrumbCurrent">{activeTab.label}</span>
           </div>
+          <div className="headerSourceSelector">
+            <span className="sourceBadge">{source.badge}</span>
+            <select
+              className="sourceSelect"
+              value={source.id}
+              onChange={(e) => setTableName(e.target.value)}
+            >
+              {sources.map((s) => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </select>
+          </div>
         </header>
 
         <div className="dashContentWrapper">
           <main className="dashContent">
-            {ActiveComponent === HomeTab ? (
-              <HomeTab onNavigate={setActiveKey} />
-            ) : (
-              <ActiveComponent />
-            )}
+            {TABS.map((t) => {
+              if (!mountedKeys.has(t.key)) return null;
+              const isActive = t.key === activeKey;
+              return (
+                <div
+                  key={t.key}
+                  style={{ display: isActive ? "contents" : "none" }}
+                >
+                  {t.key === "home" ? (
+                    <HomeTab onNavigate={navigateTo} />
+                  ) : (
+                    <t.component />
+                  )}
+                </div>
+              );
+            })}
           </main>
         </div>
       </div>

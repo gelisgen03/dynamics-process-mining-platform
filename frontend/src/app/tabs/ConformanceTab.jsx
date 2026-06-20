@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { apiClient } from "../api/client";
 import CaseSelector from "../components/CaseSelector";
+import { useDataSource } from "../context/DataSourceContext";
 import "./ConformanceTab.css";
 
 const ALGO_INFO = {
@@ -16,9 +17,10 @@ const STATUS_CONFIG = {
 };
 
 export default function ConformanceTab() {
+  const { tableName } = useDataSource();
   const [algorithm, setAlgorithm] = useState("inductive");
   const [outcome, setOutcome]     = useState("all");
-  const [caseLimit, setCaseLimit] = useState(500);
+  const [caseLimit, setCaseLimit] = useState(100);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState(null);
   const [result, setResult]       = useState(null);
@@ -28,7 +30,7 @@ export default function ConformanceTab() {
     setError(null);
     setResult(null);
     try {
-      const res = await apiClient.getConformance(algorithm, outcome, caseLimit);
+      const res = await apiClient.getConformance(algorithm, outcome, caseLimit, tableName);
       setResult(res);
     } catch (err) {
       setError(err.message || "Uyumluluk analizi başarısız");

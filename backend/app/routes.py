@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException, Query
-from .dbconnect import get_logs, supabase
+from fastapi.responses import FileResponse
+from .dbconnect import get_logs, supabase, DEFAULT_TABLE
 from .process_discovery import ProcessDiscovery
 from .model_metrics import ModelMetrics
 from .comparison import ProcessComparison
+from . import appinsights
 import pandas as pd
 import pm4py
 import os
@@ -24,14 +26,15 @@ os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
 # === CASE FILTER HELPER ===
 def get_filtered_df(body: dict):
     """
-    outcome_filter ("all" | "accepted" | "declined") ve case_limit'e göre
-    veritabanından veri çekip filtreler. Hazır DataFrame döner.
+    case_limit ve opsiyonel outcome_filter'a göre veri çekip filtreler.
+    table_name body'den alınır; default event_log_data (BPI 2012).
+    outcome_filter yalnızca BPI 2012 verisinde anlamlıdır.
     """
-    outcome_filter = body.get("outcome_filter", "all")
-    case_limit     = int(body.get("case_limit", 500))
-    fetch_rows     = 50000  # filtreleme için yeterli havuz
+    case_limit  = int(body.get("case_limit", 500))
+    table_name  = body.get("table_name", DEFAULT_TABLE)
+    fetch_rows  = 50000
 
-    response = get_logs(limit=fetch_rows, offset=0)
+    response = get_logs(limit=fetch_rows, offset=0, table_name=table_name)
     if hasattr(response, "error") and response.error:
         raise HTTPException(status_code=400, detail=str(response.error))
 
@@ -42,12 +45,15 @@ def get_filtered_df(body: dict):
     df = pd.DataFrame(data)
     df = preprocess(df)
 
-    if outcome_filter == "accepted":
-        qualifying = set(df[df["activity"] == "A_ACCEPTED"]["case_id"])
-        df = df[df["case_id"].isin(qualifying)]
-    elif outcome_filter == "declined":
-        qualifying = set(df[df["activity"] == "A_DECLINED"]["case_id"])
-        df = df[df["case_id"].isin(qualifying)]
+    # outcome_filter yalnızca BPI 2012 tablosunda desteklenir
+    if table_name == DEFAULT_TABLE:
+        outcome_filter = body.get("outcome_filter", "all")
+        if outcome_filter == "accepted":
+            qualifying = set(df[df["activity"] == "A_ACCEPTED"]["case_id"])
+            df = df[df["case_id"].isin(qualifying)]
+        elif outcome_filter == "declined":
+            qualifying = set(df[df["activity"] == "A_DECLINED"]["case_id"])
+            df = df[df["case_id"].isin(qualifying)]
 
     selected_cases = df["case_id"].unique()[:case_limit]
     df = df[df["case_id"].isin(selected_cases)]
@@ -68,87 +74,88 @@ def health_check():
 
 # --- Data Count ---
 @router.get("/data/count")
-def get_data_count():
+def get_data_count(table_name: str = Query(DEFAULT_TABLE)):
     """Tablodaki toplam kayıt sayısını döndürür."""
     try:
         if not supabase:
             return {"count": 0, "error": "Supabase bağlantısı yok"}
-        response = supabase.table("event_log_data").select("*", count="exact", head=True).execute()
-        return {"count": response.count or 0}
+        response = supabase.table(table_name).select("*", count="exact", head=True).execute()
+        return {"count": response.count or 0, "table_name": table_name}
     except Exception as e:
         return {"count": 0, "error": str(e)}
 
 
 # --- Data Summary ---
 @router.get("/data/summary")
-def get_data_summary():
-    """Veri kümesi özeti (event sayısı, case sayısı, zaman aralığı)."""
+def get_data_summary(table_name: str = Query(DEFAULT_TABLE)):
+    """Veri kümesi özeti."""
     try:
-        response = get_logs(limit=10000, offset=0)
-        
-        # Supabase APIResponse objesini kontrol et
-        if hasattr(response, 'error') and response.error:
+        if not supabase:
+            raise HTTPException(status_code=500, detail="Supabase bağlantısı yok")
+
+        # Toplam event: count=exact — satır çekmeden anlık sonuç
+        count_resp = supabase.table(table_name).select("*", count="exact", head=True).execute()
+        total_events = count_resp.count or 0
+
+        # case_id + timestamp: en erken / en geç + benzersiz case sayısı için
+        # 5000 satır case_id/timestamp çekmek yeterince hızlı ve temsili
+        SAMPLE = 5000
+        resp = supabase.table(table_name).select("case_id,timestamp").limit(SAMPLE).execute()
+        rows = resp.data if hasattr(resp, "data") else []
+
+        if not rows:
             return {
-                "total_events": 0,
+                "total_events": total_events,
                 "total_cases": 0,
-                "date_range": {"min": None, "max": None},
                 "avg_events_per_case": 0,
-                "error": str(response.error)
-            }
-        
-        data = response.data if hasattr(response, 'data') else response.get("data", [])
-        
-        if not data:
-            return {
-                "total_events": 0,
-                "total_cases": 0,
                 "date_range": {"min": None, "max": None},
-                "avg_events_per_case": 0
             }
-        
-        df = pd.DataFrame(data)
-        
-        # Sütun adlarını bul
-        case_col = None
-        timestamp_col = None
-        
-        for col in df.columns:
-            if "case" in col.lower() or "id" in col.lower():
-                case_col = col
-            if "time" in col.lower() or "timestamp" in col.lower():
-                timestamp_col = col
-        
-        total_events = len(df)
-        total_cases = df[case_col].nunique() if case_col else 0
-        avg_events = total_events / total_cases if total_cases > 0 else 0
-        
-        date_min = df[timestamp_col].min() if timestamp_col else None
-        date_max = df[timestamp_col].max() if timestamp_col else None
-        
+
+        case_ids  = {r["case_id"] for r in rows if r.get("case_id") is not None}
+        timestamps = [r["timestamp"] for r in rows if r.get("timestamp")]
+
+        # Eğer 5000 satırı doldurduysa tabloda daha fazla case olabilir;
+        # tam sayı için count_exact / (avg event per case) tahmini
+        sample_cases = len(case_ids)
+        avg_events   = round(total_events / sample_cases, 2) if sample_cases > 0 else 0
+        # Toplam case tahmini: total_events / avg_per_case (sample'dan)
+        total_cases  = round(total_events / avg_events) if avg_events > 0 else sample_cases
+
+        date_min = min(timestamps) if timestamps else None
+        date_max = max(timestamps) if timestamps else None
+
+        # Tarih için ayrıca en küçük / en büyük olanı da çek (doğruluk için)
+        try:
+            r_min = supabase.table(table_name).select("timestamp").order("timestamp", desc=False).limit(1).execute()
+            r_max = supabase.table(table_name).select("timestamp").order("timestamp", desc=True).limit(1).execute()
+            if r_min.data: date_min = r_min.data[0]["timestamp"]
+            if r_max.data: date_max = r_max.data[0]["timestamp"]
+        except Exception:
+            pass
+
         return {
-            "total_events": int(total_events),
-            "total_cases": int(total_cases),
-            "avg_events_per_case": round(avg_events, 2),
-            "date_range": {
-                "min": str(date_min) if date_min else None,
-                "max": str(date_max) if date_max else None
-            }
+            "total_events": total_events,
+            "total_cases": total_cases,
+            "avg_events_per_case": avg_events,
+            "date_range": {"min": date_min, "max": date_max},
         }
+    except HTTPException:
+        raise
     except Exception as e:
         return {
             "error": str(e),
             "total_events": 0,
             "total_cases": 0,
             "avg_events_per_case": 0,
-            "date_range": {"min": None, "max": None}
+            "date_range": {"min": None, "max": None},
         }
 
 # --- Data Sample ---
 @router.get("/data/sample")
-def get_data_sample(limit: int = Query(10, ge=1, le=1000), offset: int = Query(0, ge=0)):
+def get_data_sample(limit: int = Query(10, ge=1, le=1000), offset: int = Query(0, ge=0), table_name: str = Query(DEFAULT_TABLE)):
     """Örnek veri kayıtları."""
     try:
-        response = get_logs(limit=limit, offset=offset)
+        response = get_logs(limit=limit, offset=offset, table_name=table_name)
         
         # Supabase APIResponse objesini kontrol et
         if hasattr(response, 'error') and response.error:
@@ -257,6 +264,20 @@ def get_available_algorithms():
             "heuristics": "Heuristics Miner - Gürültülü veriler için iyi"
         }
     }
+
+# --- Petri Net Image (no-cache) ---
+@router.get("/petri-image/{filename}")
+def get_petri_image(filename: str):
+    """Petri net PNG'sini cache olmadan servis eder."""
+    safe_name = os.path.basename(filename)
+    out_path = os.path.join(OUTPUT_DIR, safe_name)
+    if not os.path.isfile(out_path):
+        raise HTTPException(status_code=404, detail="Görsel bulunamadı")
+    return FileResponse(
+        out_path,
+        media_type="image/png",
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"},
+    )
 
 # --- Discover Process (Single Algorithm) ---
 @router.post("/discover-process")
@@ -433,106 +454,7 @@ def get_performance(body: dict):
     """
     try:
         df = get_filtered_df(body)
-
-        # --- Case süreleri ---
-        case_stats = (
-            df.groupby("case_id")["timestamp"]
-            .agg(start="min", end="max")
-            .reset_index()
-        )
-        case_stats["duration_hours"] = (
-            (case_stats["end"] - case_stats["start"])
-            .dt.total_seconds() / 3600
-        )
-        case_stats["duration_days"] = case_stats["duration_hours"] / 24
-
-        avg_days = float(case_stats["duration_days"].mean())
-        median_days = float(case_stats["duration_days"].median())
-        min_days = float(case_stats["duration_days"].min())
-        max_days = float(case_stats["duration_days"].max())
-
-        # --- Süre dağılımı (bucket) ---
-        bins   = [0, 1, 7, 30, 90, float("inf")]
-        labels = ["<1 gün", "1-7 gün", "7-30 gün", "30-90 gün", "90+ gün"]
-        case_stats["bucket"] = pd.cut(
-            case_stats["duration_days"], bins=bins, labels=labels
-        )
-        distribution = (
-            case_stats["bucket"]
-            .value_counts()
-            .reindex(labels)
-            .fillna(0)
-            .astype(int)
-            .reset_index()
-        )
-        distribution.columns = ["bucket", "count"]
-        distribution["percentage"] = (
-            distribution["count"] / len(case_stats) * 100
-        ).round(1)
-
-        # --- Aktivite başına bekleme süresi ---
-        df_sorted = df.sort_values(["case_id", "timestamp"]).copy()
-        df_sorted["next_ts"] = df_sorted.groupby("case_id")["timestamp"].shift(-1)
-        df_sorted["wait_hours"] = (
-            (df_sorted["next_ts"] - df_sorted["timestamp"])
-            .dt.total_seconds() / 3600
-        )
-        act_wait = (
-            df_sorted.groupby("activity")["wait_hours"]
-            .mean()
-            .dropna()
-            .sort_values(ascending=False)
-            .head(15)
-            .reset_index()
-        )
-        act_wait.columns = ["activity", "avg_wait_hours"]
-        act_wait["avg_wait_hours"] = act_wait["avg_wait_hours"].round(2)
-
-        # --- En yavaş / en hızlı 5 case ---
-        slow_ids = case_stats.nlargest(5, "duration_days")["case_id"].tolist()
-        top_slow = []
-        for cid in slow_ids:
-            dur = round(float(case_stats.loc[case_stats["case_id"] == cid, "duration_days"].iloc[0]), 2)
-            case_df = df_sorted[df_sorted["case_id"] == cid].sort_values("timestamp")
-            steps = []
-            for _, row in case_df.iterrows():
-                wh = row.get("wait_hours")
-                steps.append({
-                    "activity": row["activity"],
-                    "wait_hours": round(float(wh), 2) if pd.notna(wh) and float(wh) >= 0 else None,
-                })
-            top_slow.append({"case_id": cid, "duration_days": dur, "steps": steps})
-
-        # En fazla 1 tane 0.0 süreli case; geri kalanlar > 0
-        fastest_one = case_stats.nsmallest(1, "duration_days")[["case_id", "duration_days"]]
-        next_four   = (
-            case_stats[case_stats["duration_days"] > 0]
-            .nsmallest(4, "duration_days")
-            [["case_id", "duration_days"]]
-        )
-        top_fast = (
-            pd.concat([fastest_one, next_four])
-            .drop_duplicates(subset="case_id")
-            .head(5)
-            .assign(duration_days=lambda x: x["duration_days"].round(2))
-            .to_dict(orient="records")
-        )
-
-        return {
-            "status": "success",
-            "events_analyzed": len(df),
-            "cases_analyzed": int(len(case_stats)),
-            "summary": {
-                "avg_days":    round(avg_days, 2),
-                "median_days": round(median_days, 2),
-                "min_days":    round(min_days, 2),
-                "max_days":    round(max_days, 2),
-            },
-            "distribution": distribution.to_dict(orient="records"),
-            "activity_wait": act_wait.to_dict(orient="records"),
-            "slowest_cases": top_slow,
-            "fastest_cases": top_fast,
-        }
+        return {"status": "success", **_performance_payload(df)}
 
     except HTTPException as e:
         raise e
@@ -552,8 +474,10 @@ def get_case_detail(body: dict):
         if not case_id_raw:
             raise HTTPException(status_code=400, detail="case_id gerekli")
 
+        table_name = body.get("table_name", DEFAULT_TABLE)
+
         # Tüm veriyi çek (case_limit yok, tek case arıyoruz)
-        response = get_logs(limit=50000, offset=0)
+        response = get_logs(limit=50000, offset=0, table_name=table_name)
         if hasattr(response, "error") and response.error:
             raise HTTPException(status_code=400, detail=str(response.error))
         data = response.data if hasattr(response, "data") else response.get("data", [])
@@ -610,11 +534,17 @@ def get_case_detail(body: dict):
         pct_rank    = float((all_case_stats["duration_days"] <= total_days).mean() * 100)
 
         # Bu case'in outcome'u
-        outcome = "Bilinmiyor"
-        if "A_ACCEPTED" in case_df["activity"].values:
+        activities = case_df["activity"].values
+        if "A_ACCEPTED" in activities:
             outcome = "Kabul Edildi"
-        elif "A_DECLINED" in case_df["activity"].values:
+        elif "A_DECLINED" in activities:
             outcome = "Reddedildi"
+        elif "Ödeme Yapıldı" in activities:
+            outcome = "Tamamlandı"
+        elif "Talep Reddedildi" in activities:
+            outcome = "Reddedildi"
+        else:
+            outcome = case_df["activity"].iloc[-1]  # son aktiviteyi outcome say
 
         return {
             "case_id":      str(case_id_raw),
@@ -649,49 +579,7 @@ def get_variants(body: dict):
     """
     try:
         df = get_filtered_df(body)
-
-        # Her case için aktivite dizisini hesapla
-        traces = (
-            df.groupby("case_id")["activity"]
-            .apply(lambda acts: " → ".join(acts.tolist()))
-            .reset_index()
-            .rename(columns={"activity": "trace"})
-        )
-
-        # Varyantları frekansa göre sırala
-        variant_counts = (
-            traces["trace"]
-            .value_counts()
-            .reset_index()
-        )
-        variant_counts.columns = ["trace", "frequency"]
-        variant_counts["percentage"] = (
-            variant_counts["frequency"] / len(traces) * 100
-        ).round(2)
-        variant_counts["rank"] = range(1, len(variant_counts) + 1)
-
-        # Aktivite frekansları
-        activity_counts = (
-            df["activity"]
-            .value_counts()
-            .reset_index()
-        )
-        activity_counts.columns = ["activity", "count"]
-        activity_counts["percentage"] = (
-            activity_counts["count"] / len(df) * 100
-        ).round(2)
-
-        top_variants = variant_counts.head(10).to_dict(orient="records")
-        top_activities = activity_counts.head(15).to_dict(orient="records")
-
-        return {
-            "status": "success",
-            "events_analyzed": len(df),
-            "cases_analyzed": int(traces.shape[0]),
-            "unique_variants": int(len(variant_counts)),
-            "top_variants": top_variants,
-            "top_activities": top_activities,
-        }
+        return {"status": "success", **_variants_payload(df)}
 
     except HTTPException as e:
         raise e
@@ -778,20 +666,42 @@ def get_metrics_endpoint(body: dict):
 
 
 # --- AI Chat (Gemini) ---
-SYSTEM_PROMPT = """Sen bir süreç madenciliği (process mining) asistanısın. Türkçe yanıt veriyorsun.
+SYSTEM_PROMPT = """
+Sen süreç madenciliği (process mining) asistanısın. Sadece Türkçe yanıt verirsin.
 
-VERİ SETİ: BPI Challenge 2012 — bir bankanın kredi başvuru süreci.
-- A_ = başvuru adımları | W_ = iş akışı görevleri | O_ = teklif adımları
-- Metrikler: Fitness, Precision, Generalization, Simplicity
-- Algoritmalar: Inductive (fitness garantili), Alpha (klasik), Heuristics (gürültüye dayanıklı)
+VERİ SETİ: BPI Challenge 2012 bankacılık kredi süreci.
 
-YANIT KURALLARI — bunlara kesinlikle uy:
-1. Varsayılan yanıt: maksimum 2-3 madde, her biri 10 kelimeyi geçmez. Kullanıcı "detay", "açıkla", "daha fazla" derse genişlet.
-2. Her maddeye uygun emoji (⚠️ sorun, ✅ iyi, 🔁 döngü, ⏱ süre, 💡 öneri).
-3. Teknik terimleri Türkçe açıkla.
-4. Öneri dili yumuşak ve danışmanlık tonu olsun: "yapmalısınız" değil "düşünebilirsiniz", "zorunlu" değil "faydalı olabilir", "gerekir" değil "değerlendirilebilir".
-5. Öneriler somut olsun: "toplantı yapın" değil "geri arama ekibiyle haftada 1 kısa durum toplantısı düzenlemeyi düşünebilirsiniz".
-6. Analiz sonucu yapıştırılmışsa o veriye odaklan."""
+ROL:
+- Sadece teknik analiz yaparsın
+- Sohbet yok, sadece yorum
+- veri yoksa yardımcı olmaya çalış ama daha iyi cevaplar için veri verilmesini belirt
+
+ÇIKTI FORMATI ZORUNLU:
+- 2-3 madde
+- Her madde: emoji + kısa cümle
+- Maksimum 10-15 kelime
+- Tek cümle = tek madde
+- Ama kısa yanıtlardan sonra dilerseniz detaylandırabilirm diyebilirsin
+
+ASLA kullanma:
+- "***", "##", markdown başlık
+- uzun paragraf
+- akademik açıklama
+- liste dışı yazı
+
+EMOJİ KURALI:
+📊 fitness | 🎯 precision | ⚠️ problem | 💡 öneri | ⏱ süre | 🔁 döngü
+
+DETAY MODU:
+Kullanıcı "detay/açıkla" derse:
+- 5-7 madde
+- max 15 kelime
+
+ÖNERİ DİLİ:
+- "yapmalısınız" yerine "düşünebilirsiniz"
+
+FORMAT DIŞI YANIT = YENİDEN YAZ
+"""
 
 
 @router.post("/chat")
@@ -840,3 +750,357 @@ def chat_with_agent(body: dict):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent hatası: {str(e)}")
+
+
+# ============================================================
+#  CANLI VERİ — Application Insights (D365 F&O telemetri)
+# ============================================================
+# Gerçek BalSoft telemetrisi iki minable süreç içerir: Depo Dalga İşleme
+# (wave) ve Toplu İş Yürütme (batch). KQL şablonları appinsights.py'de.
+
+def _resolve_kql(body: dict):
+    """Body'den ya hazır 'process' kataloğunu ya da serbest 'query'yi çözer."""
+    raw = (body.get("query") or "").strip()
+    if raw:
+        return raw, body.get("case_col", "case_id"), body.get("activity_col", "activity"), body.get("timestamp_col", "timestamp")
+    process = body.get("process", "wave")
+    days = int(body.get("days", appinsights.PROCESS_CATALOG.get(process, {}).get("default_days", 30)))
+    # Vaka sayısı kullanıcı seçimli: 100-500 arası, varsayılan 250.
+    case_limit = max(100, min(500, int(body.get("cases", 250))))
+    return appinsights.build_log_kql(process, days, case_limit), "case_id", "activity", "timestamp"
+
+
+def _live_df(body: dict):
+    """App Insights'tan canlı olay günlüğü çekip ön-işlenmiş DataFrame döndürür."""
+    kql, case_col, activity_col, timestamp_col = _resolve_kql(body)
+    result = appinsights.run_query(kql)
+    events = appinsights.to_event_log(result, case_col, activity_col, timestamp_col)
+    df = preprocess(pd.DataFrame(events))
+    if df.empty:
+        raise HTTPException(status_code=400, detail="Canlı veri temizleme sonrası boş kaldı.")
+    return df
+
+
+# === Paylaşılan analiz hesaplayıcıları (Supabase + canlı tarafça kullanılır) ===
+def _variants_payload(df):
+    """Ön-işlenmiş df'ten trace varyantları + aktivite frekansları."""
+    traces = (
+        df.groupby("case_id")["activity"]
+        .apply(lambda acts: " → ".join(acts.tolist()))
+        .reset_index().rename(columns={"activity": "trace"})
+    )
+    variant_counts = traces["trace"].value_counts().reset_index()
+    variant_counts.columns = ["trace", "frequency"]
+    variant_counts["percentage"] = (variant_counts["frequency"] / len(traces) * 100).round(2)
+    variant_counts["rank"] = range(1, len(variant_counts) + 1)
+
+    activity_counts = df["activity"].value_counts().reset_index()
+    activity_counts.columns = ["activity", "count"]
+    activity_counts["percentage"] = (activity_counts["count"] / len(df) * 100).round(2)
+
+    return {
+        "events_analyzed": len(df),
+        "cases_analyzed": int(traces.shape[0]),
+        "unique_variants": int(len(variant_counts)),
+        "top_variants": variant_counts.head(10).to_dict(orient="records"),
+        "top_activities": activity_counts.head(15).to_dict(orient="records"),
+    }
+
+
+def _performance_payload(df):
+    """Ön-işlenmiş df'ten case süresi + aktivite bekleme istatistikleri."""
+    case_stats = (
+        df.groupby("case_id")["timestamp"].agg(start="min", end="max").reset_index()
+    )
+    case_stats["duration_hours"] = (case_stats["end"] - case_stats["start"]).dt.total_seconds() / 3600
+    case_stats["duration_days"] = case_stats["duration_hours"] / 24
+
+    avg_days = float(case_stats["duration_days"].mean())
+    median_days = float(case_stats["duration_days"].median())
+    min_days = float(case_stats["duration_days"].min())
+    max_days = float(case_stats["duration_days"].max())
+
+    bins = [0, 1, 7, 30, 90, float("inf")]
+    labels = ["<1 gün", "1-7 gün", "7-30 gün", "30-90 gün", "90+ gün"]
+    case_stats["bucket"] = pd.cut(case_stats["duration_days"], bins=bins, labels=labels)
+    distribution = case_stats["bucket"].value_counts().reindex(labels).fillna(0).astype(int).reset_index()
+    distribution.columns = ["bucket", "count"]
+    distribution["percentage"] = (distribution["count"] / len(case_stats) * 100).round(1)
+
+    df_sorted = df.sort_values(["case_id", "timestamp"]).copy()
+    df_sorted["next_ts"] = df_sorted.groupby("case_id")["timestamp"].shift(-1)
+    df_sorted["wait_hours"] = (df_sorted["next_ts"] - df_sorted["timestamp"]).dt.total_seconds() / 3600
+    act_wait = (
+        df_sorted.groupby("activity")["wait_hours"].mean().dropna()
+        .sort_values(ascending=False).head(15).reset_index()
+    )
+    act_wait.columns = ["activity", "avg_wait_hours"]
+    act_wait["avg_wait_hours"] = act_wait["avg_wait_hours"].round(2)
+
+    slow_ids = case_stats.nlargest(5, "duration_days")["case_id"].tolist()
+    top_slow = []
+    for cid in slow_ids:
+        dur = round(float(case_stats.loc[case_stats["case_id"] == cid, "duration_days"].iloc[0]), 2)
+        case_df = df_sorted[df_sorted["case_id"] == cid].sort_values("timestamp")
+        steps = []
+        for _, row in case_df.iterrows():
+            wh = row.get("wait_hours")
+            steps.append({
+                "activity": row["activity"],
+                "wait_hours": round(float(wh), 2) if pd.notna(wh) and float(wh) >= 0 else None,
+            })
+        top_slow.append({"case_id": cid, "duration_days": dur, "steps": steps})
+
+    fastest_one = case_stats.nsmallest(1, "duration_days")[["case_id", "duration_days"]]
+    next_four = case_stats[case_stats["duration_days"] > 0].nsmallest(4, "duration_days")[["case_id", "duration_days"]]
+    top_fast = (
+        pd.concat([fastest_one, next_four]).drop_duplicates(subset="case_id").head(5)
+        .assign(duration_days=lambda x: x["duration_days"].round(2)).to_dict(orient="records")
+    )
+
+    return {
+        "events_analyzed": len(df),
+        "cases_analyzed": int(len(case_stats)),
+        "summary": {
+            "avg_days": round(avg_days, 2), "median_days": round(median_days, 2),
+            "min_days": round(min_days, 2), "max_days": round(max_days, 2),
+            # Saat hassasiyeti (kısa süreçler için gün ~0 kalmasın diye)
+            "avg_hours": round(avg_days * 24, 2), "median_hours": round(median_days * 24, 2),
+            "min_hours": round(min_days * 24, 2), "max_hours": round(max_days * 24, 2),
+        },
+        "distribution": distribution.to_dict(orient="records"),
+        "activity_wait": act_wait.to_dict(orient="records"),
+        "slowest_cases": top_slow,
+        "fastest_cases": top_fast,
+    }
+
+
+# --- Bağlantı durumu ---
+@router.get("/appinsights/status")
+def appinsights_status():
+    """App Insights yapılandırma durumunu döndürür (gizli değer sızdırmaz)."""
+    return appinsights.status()
+
+
+# --- Süreç kataloğu (gerçek telemetriden türetildi) ---
+@router.get("/appinsights/processes")
+def appinsights_processes():
+    """Canlı telemetriden minable süreçlerin kataloğunu döndürür."""
+    return {"processes": appinsights.list_processes()}
+
+
+# --- Süreç için KQL şablonu ---
+@router.get("/appinsights/query-template")
+def appinsights_query_template(process: str = Query("wave"), days: int = Query(30)):
+    """Bir süreç için olay günlüğü KQL şablonunu döndürür (editörde göstermek için)."""
+    try:
+        return {"query": appinsights.build_log_kql(process, days)}
+    except appinsights.AppInsightsError as e:
+        raise HTTPException(status_code=e.status, detail=str(e))
+
+
+# --- Genel bakış (canlı KPI'lar) ---
+@router.post("/appinsights/overview")
+def appinsights_overview(body: dict):
+    """
+    Seçili süreç için canlı KPI'lar + en sık aktiviteler.
+    Body: { "process": "wave|batch", "days": 30 }
+    """
+    try:
+        process = body.get("process", "wave")
+        p = appinsights._process(process)
+        days = int(body.get("days", p["default_days"]))
+
+        ov = appinsights.rows_to_dicts(appinsights.run_query(appinsights.build_overview_kql(process, days)))
+        acts = appinsights.rows_to_dicts(appinsights.run_query(appinsights.build_activities_kql(process, days)))
+
+        kpi = ov[0] if ov else {}
+        total_acts = sum(int(a.get("c", 0)) for a in acts) or 1
+        top_activities = [
+            {"activity": a.get("activity"), "count": int(a.get("c", 0)),
+             "percentage": round(int(a.get("c", 0)) / total_acts * 100, 1)}
+            for a in acts
+        ]
+
+        return {
+            "status": "success",
+            "process": process,
+            "label": p["label"],
+            "scope_label": p["scope_label"],
+            "days": days,
+            "kpi": {
+                "events": int(kpi.get("events", 0) or 0),
+                "cases": int(kpi.get("cases", 0) or 0),
+                "activities": int(kpi.get("activities", 0) or 0),
+                "scope": int(kpi.get("scope", 0) or 0),
+                "date_min": kpi.get("tmin"),
+                "date_max": kpi.get("tmax"),
+            },
+            "top_activities": top_activities,
+        }
+    except appinsights.AppInsightsError as e:
+        raise HTTPException(status_code=e.status, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Genel bakış hatası: {str(e)}")
+
+
+# --- En yavaş formlar (pageViews performansı) ---
+@router.post("/appinsights/slowest-forms")
+def appinsights_slowest_forms(body: dict):
+    """
+    En yavaş D365 formları (form yükleme süreleri, pageViews tablosu).
+    Süreçten bağımsızdır. Body: { "days": 30, "top": 15 }
+    """
+    try:
+        days = int(body.get("days", 30))
+        top = int(body.get("top", 15))
+        rows = appinsights.rows_to_dicts(
+            appinsights.run_query(appinsights.build_slowest_forms_kql(days, top))
+        )
+        forms = [
+            {
+                "form": r.get("form"),
+                "calls": int(r.get("calls", 0) or 0),
+                "avg_ms": round(float(r.get("avg_ms", 0) or 0), 1),
+                "p95_ms": round(float(r.get("p95_ms", 0) or 0), 1),
+                "max_ms": round(float(r.get("max_ms", 0) or 0), 1),
+            }
+            for r in rows
+        ]
+        return {"status": "success", "days": days, "forms": forms}
+    except appinsights.AppInsightsError as e:
+        raise HTTPException(status_code=e.status, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Form performansı hatası: {str(e)}")
+
+
+# --- Canlı varyant analizi ---
+@router.post("/appinsights/variants")
+def appinsights_variants(body: dict):
+    """Canlı veriden trace varyantları + aktivite frekansları. Body: {process, days}"""
+    try:
+        df = _live_df(body)
+        return {"status": "success", "process": body.get("process", "wave"), **_variants_payload(df)}
+    except appinsights.AppInsightsError as e:
+        raise HTTPException(status_code=e.status, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Canlı varyant analizi hatası: {str(e)}")
+
+
+# --- Canlı performans analizi ---
+@router.post("/appinsights/performance")
+def appinsights_performance(body: dict):
+    """Canlı veriden case süresi + bekleme istatistikleri. Body: {process, days}"""
+    try:
+        df = _live_df(body)
+        return {"status": "success", "process": body.get("process", "wave"), **_performance_payload(df)}
+    except appinsights.AppInsightsError as e:
+        raise HTTPException(status_code=e.status, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Canlı performans analizi hatası: {str(e)}")
+
+
+# --- Canlı sorgu + olay günlüğü önizlemesi ---
+@router.post("/appinsights/query")
+def appinsights_query(body: dict):
+    """
+    Seçili süreç (ya da serbest KQL) için canlı olay günlüğü önizlemesi.
+    Body: { "process": "wave|batch", "days": 30 }  ya da  { "query": "<KQL>" }
+    """
+    try:
+        kql, case_col, activity_col, timestamp_col = _resolve_kql(body)
+        preview = int(body.get("preview", 50))
+
+        result = appinsights.run_query(kql)
+        events = appinsights.to_event_log(result, case_col, activity_col, timestamp_col)
+
+        df = pd.DataFrame(events)
+        if df.empty:
+            return {"status": "success", "columns": result["columns"], "total_events": 0,
+                    "total_cases": 0, "preview": [],
+                    "message": "Sorgu çalıştı ancak eşleşen olay bulunamadı."}
+
+        df = preprocess(df)
+        return {
+            "status": "success",
+            "columns": result["columns"],
+            "total_events": int(len(df)),
+            "total_cases": int(df["case_id"].nunique()),
+            "preview": df.head(preview).assign(
+                timestamp=lambda x: x["timestamp"].astype(str)
+            ).to_dict(orient="records"),
+        }
+    except appinsights.AppInsightsError as e:
+        raise HTTPException(status_code=e.status, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Canlı sorgu hatası: {str(e)}")
+
+
+# --- Canlı veriden süreç keşfi ---
+@router.post("/appinsights/discover")
+def appinsights_discover(body: dict):
+    """
+    App Insights'tan canlı olay günlüğü çekip PM4Py keşfi çalıştırır,
+    Petri net görseli üretir. (Supabase'e yazmadan, uçtan uca canlı.)
+    Body: { "process": "wave|batch", "days": 30, "algorithm": "inductive" }
+    """
+    try:
+        algorithm = body.get("algorithm", "inductive").lower()
+        if algorithm not in ("inductive", "alpha", "heuristics"):
+            raise HTTPException(status_code=400, detail=f"Bilinmeyen algoritma: {algorithm}")
+
+        kql, case_col, activity_col, timestamp_col = _resolve_kql(body)
+        result = appinsights.run_query(kql)
+        events = appinsights.to_event_log(result, case_col, activity_col, timestamp_col)
+
+        df = preprocess(pd.DataFrame(events))
+        if df.empty:
+            raise HTTPException(status_code=400, detail="Canlı veri temizleme sonrası boş kaldı.")
+
+        log = to_pm4py_log(df)
+
+        # net/im/fm al → hem metrik hesapla hem görseli kaydet
+        if algorithm == "alpha":
+            net, im, fm = ProcessDiscovery.discover_with_alpha_miner(log)
+        elif algorithm == "heuristics":
+            net, im, fm = ProcessDiscovery.discover_with_heuristics_miner(log, dependency_threshold=0.5)
+        else:
+            net, im, fm = ProcessDiscovery.discover_with_inductive_miner(log)
+        if net is None:
+            raise HTTPException(status_code=500, detail=f"Algoritma çalıştırılamadı: {algorithm}")
+
+        out_path = os.path.join(OUTPUT_DIR, "appinsights_live_" + algorithm + ".png")
+        pm4py.save_vis_petri_net(net, im, fm, out_path)
+
+        # Kalite metrikleri (fitness / precision / generalization / simplicity)
+        try:
+            metrics = ModelMetrics.get_model_quality_score(log, net, im, fm)
+        except Exception as me:
+            metrics = {"error": str(me)}
+
+        return {
+            "status": "success",
+            "source": "application_insights",
+            "process": body.get("process", "wave"),
+            "algorithm": algorithm,
+            "events_analyzed": int(len(df)),
+            "cases_analyzed": int(df["case_id"].nunique()),
+            "image_filename": os.path.basename(out_path),
+            "metrics": metrics,
+        }
+    except appinsights.AppInsightsError as e:
+        raise HTTPException(status_code=e.status, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Canlı keşif hatası: {str(e)}")

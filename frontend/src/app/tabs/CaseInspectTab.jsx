@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { apiClient } from "../api/client";
+import { useDataSource } from "../context/DataSourceContext";
 import "./CaseInspectTab.css";
 
 function fmtDays(days) {
@@ -40,6 +41,7 @@ function outcomeStyle(outcome) {
 }
 
 export default function CaseInspectTab() {
+  const { tableName } = useDataSource();
   const [inputId, setInputId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
@@ -53,7 +55,7 @@ export default function CaseInspectTab() {
     setError(null);
     setResult(null);
     try {
-      const res = await apiClient.getCaseDetail(target);
+      const res = await apiClient.getCaseDetail(target, tableName);
       setResult(res);
     } catch (err) {
       setError(err.message || "Case bulunamadı");

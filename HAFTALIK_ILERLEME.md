@@ -23,15 +23,136 @@
 | 5 | 11.05 - 17.05 | pm4py kütüphanesi kullanılarak temel süreç keşfi (process discovery) modülünün geliştirilmesi | %50 | ✅ Tamamlandı |
 | 6 | 18.05 - 24.05 | Farklı süreç keşfi algoritmalarının uygulanması ve model karşılaştırma altyapısının kurulması | %60 | ✅ Tamamlandı |
 | 7 | 01.06 - 07.06 | Uyumluluk analizi (conformance checking) ve performans analiz modüllerinin geliştirilmesi | %70 | ✅ Tamamlandı |
-| 8 | 08.06 - 14.06 | Süreç görselleştirme ve dashboard altyapısının geliştirilmesi | %80 | 🔄 Devam Ediyor |
-| 9 | 15.06 - 21.06 | Kullanıcı arayüzü geliştirme , backend ile entegrasyonu, bitirme sunum ve poster hazırlıkları | %90 | ⬜ Başlamadı |
-| 10 | 22.06 - 28.06 | Test, hata düzeltme, performans iyileştirme ve proje dokümantasyonunun tamamlanması | %100 | ⬜ Başlamadı |
+| 8 | 08.06 - 14.06 | Süreç görselleştirme ve dashboard altyapısının geliştirilmesi | %80 | ✅ Tamamlandı |
+| 9 | 15.06 - 21.06 | Kullanıcı arayüzü geliştirme, backend ile entegrasyonu, bitirme sunum ve poster hazırlıkları | %90 | ✅ Tamamlandı |
+| 10 | 22.06 - 28.06 | Test, hata düzeltme, performans iyileştirme ve proje dokümantasyonunun tamamlanması | %100 | 🔄 Devam Ediyor |
 
 **Durum simgeleri:** ⬜ Başlamadı | 🔄 Devam Ediyor | ✅ Tamamlandı | ⚠️ Gecikti
 
 ---
 
 ## Haftalık İlerleme Kayıtları
+
+---
+
+### Hafta 10 *(Tarih: 22.06.2026 - 28.06.2026)*
+
+**Plandaki hedef:**
+- Test, hata düzeltme, performans iyileştirme ve proje dokümantasyonunun tamamlanması.
+
+**Bu hafta yaptıklarım:**
+- Tüm sekmelerin son kullanıcı testleri yapıldı; bulunan hatalar giderildi.
+- Analiz sonuçları korunarak sekme geçişi sağlandı (lazy-mount / `display:none` stratejisi): sekme değişimlerinde React bileşeni unmount edilmeden gizleniyor, geri dönüldüğünde önceki sonuçlar bozulmadan görüntüleniyor.
+- Performans sekmesi bölüm sıralaması kullanıcı deneyimine göre yeniden düzenlendi: KPI kartları → En Yavaş/Hızlı → Darboğaz Analizi → Süre Dağılımı.
+- Ana sayfa "Nasıl Çalışır?" bölümü kaldırılarak sayfa sade tutuldu.
+- Tüm analiz sekmelerinde varsayılan case limit 500'den **100**'e indirildi; varsayılan veri kaynağı **Dynamics 365 Dummy Data** olarak ayarlandı.
+- Veri Kümesi sekmesindeki özet istatistikler statik kaynaktan okunacak şekilde yeniden düzenlendi (BPI 2012: 262.200 event / 13.087 case; D365: 980 event / 100 case); API çağrısı ortadan kaldırıldı.
+- Haftalık ilerleme raporu (HAFTALIK_ILERLEME.md) 8.-9.-10. hafta kayıtlarıyla güncellendi.
+
+**Plana göre durumum:**
+- 10. hafta hedefleri büyük ölçüde tamamlandı. Platform kararlı çalışır durumda, tüm analiz sekmeleri hatasız çalışmaktadır.
+
+**Karşılaştığım sorunlar / zorluklar:**
+- Sekme değişiminde bileşen unmount olduğundan analiz sonuçları kayboluyordu. Tüm tab'ları aynı anda DOM'da tutup `display:none`/`display:contents` ile görünürlüğü yönetmek yerine, "lazy-mount" yaklaşımıyla ilk ziyarette mount edilip asla unmount edilmeme stratejisi uygulandı.
+- Veri özeti API çağrısı büyük tablolarda (BPI 2012 – 262.200 satır) sonsuz pagination döngüsüne girerek "Yükleniyor…" ekranında takılıyordu; statik veri yaklaşımıyla hem doğruluk hem anlık yükleme sağlandı.
+
+**Gelecek hafta hedefim:**
+- Bitirme tezi yazımının tamamlanması.
+- Sunum materyallerinin ve posterinin son halinin hazırlanması.
+
+---
+
+### Hafta 9 *(Tarih: 15.06.2026 - 21.06.2026)*
+
+**Plandaki hedef:**
+- Kullanıcı arayüzü geliştirme, backend ile entegrasyon, bitirme sunum ve poster hazırlıkları.
+
+**Bu hafta yaptıklarım:**
+
+**Çoklu Veri Seti Altyapısı:**
+- Platform BPI 2012'ye özgü yapıdan kurtarılarak genel amaçlı hale getirildi. Her backend endpoint'e `table_name` parametresi eklendi (GET sorguları query param, POST sorguları request body üzerinden).
+- `dbconnect.py`'de `DEFAULT_TABLE = "event_log_data"` sabiti tanımlandı; `get_logs()` ve `get_all_logs()` fonksiyonları parametrik hale getirildi.
+- `outcome_filter` (A_ACCEPTED / A_DECLINED) yalnızca BPI 2012 tablosunda çalışacak şekilde koşullandırıldı.
+
+**Dynamics 365 Dummy Data Veri Seti:**
+- Gerçekçi D365 Finance satın alma süreci simüle eden `generate_d365_data.py` betiği yazıldı: 4 proses varyantı (Happy Path %60, Rejection %15, Partial Delivery %15, Invoice Dispute %10), 100 case, 980 event, 2024-2025 tarih aralığı.
+- `d365_event_log` tablosu Supabase'de oluşturuldu (`id int8, case_id int8, activity text, timestamp text`) ve veriler yüklendi.
+
+**Frontend Veri Kaynağı Yönetimi:**
+- `DataSourceContext.jsx` React Context API bileşeni oluşturuldu; `tableName`, `source`, `sources`, `setTableName` global state olarak tüm sekmelere dağıtıldı.
+- Dashboard header'a kaynak seçici dropdown eklendi: `BPI` / `D365` badge'i ve `<select>` ile anlık veri kaynağı değiştirme imkânı.
+- `client.js`'deki tüm API metodlarına `tableName` parametresi eklendi.
+- `CaseSelector` bileşeninde outcome filter D365 veri setinde otomatik gizlendi (`isBpi` koşulu).
+- `ComparisonTab`, `DiscoveryTab`, `VariantTab`, `PerformanceTab`, `ConformanceTab`, `CaseInspectTab`, `SettingsTab` bileşenlerine `useDataSource()` entegrasyonu yapıldı.
+
+**Case İncele Sekmesi D365 Desteği:**
+- `/api/case-detail` endpoint'i `table_name` parametresini görmezden geliyordu; `get_logs()` çağrısına `table_name` aktarılarak D365 verisinde de case arama yapılabilmesi sağlandı.
+
+**Petri Net Görselleştirme İyileştirmeleri:**
+- Yeni Petri net çizimi yapıldığında eski görsel gösterilmeye devam ediyordu. `/api/petri-image/{filename}` endpoint'i `Cache-Control: no-store` başlığıyla eklendi; `<img key={result.timestamp}>` ile React DOM elementi her sorguda yeniden oluşturuldu.
+- Petri net görseli altına 6 öğeli sembol açıklama kartı (legend) eklendi: Yer, Token, Geçiş, Sessiz Geçiş (τ), Ark, Başlangıç→Bitiş.
+
+**AI Chat Widget Yeniden Tasarımı:**
+- Context panel ve kafa karıştırıcı butonlar kaldırıldı. Temizle (çöp kutusu) ve Kapat (✕) butonları net şekilde ayrıştırıldı.
+- Chat widget subtitle'ı seçili veri kaynağı adını dinamik olarak gösteriyor (`Gemini · Dynamics 365 Dummy Data`).
+
+**Ana Sayfa Yeniden Tasarımı:**
+- HomeTab karmaşık navigasyon hub'ından temiz bir karşılama ekranına dönüştürüldü: hero bölümü + iki yol kartı (Supabase analizi / Canlı D365 telemetrisi).
+- `public/bachraund_brand.png` hero arka planı olarak uygulandı (koyu mavi gradient katmanı ile birlikte).
+- Sidebar sıralaması mantıksal akışa göre düzenlendi: Karşılaştır → Keşfet.
+
+**Plana göre durumum:**
+- 9. hafta hedefleri tamamlandı. Platform artık iki farklı veri kümesiyle (BPI 2012 ve D365 Dummy Data) çalışabilmekte; kullanıcı arayüzü önemli ölçüde iyileştirilmiştir.
+
+**Karşılaştığım sorunlar / zorluklar:**
+- D365 tablosunda `timestamp` alanı `text` tipinde saklandığından pm4py timestamp parse işlemi için `pd.to_datetime(..., utc=True, errors='coerce')` kullanıldı; UTC+00:00 format dönüşümü sorunsuz çalıştı.
+- BPI 2012 veri özeti endpoint'i 10.000 satır sınırında kesildiğinden yanlış case sayısı (37 case) döndürüyordu. Gerçek istatistikler `DataSourceContext`'e sabit olarak tanımlandı.
+
+**Gelecek hafta hedefim:**
+- Final testleri ve belgeleme.
+- Bitirme sunumu ve poster hazırlıklarının tamamlanması.
+
+---
+
+### Hafta 8 *(Tarih: 08.06.2026 - 14.06.2026)*
+
+**Plandaki hedef:**
+- Süreç görselleştirme ve dashboard altyapısının geliştirilmesi.
+
+**Bu hafta yaptıklarım:**
+
+**Varyant Analizi — Accordion Görünümü:**
+- Her trace varyantı tıklanabilir accordion kartı olarak yeniden tasarlandı. Açıldığında o varyantın adım adım aktivite akışı gösteriliyor, kapatılabiliyor. Renk kodlaması: A_ mavi, O_ yeşil, W_ kırmızı.
+- Top 10 varyant ve top 15 aktivite frekans grafiği görselleştirildi.
+
+**Case İncele Sekmesi:**
+- Case ID girildiğinde o case'e ait adım adım timeline, her adım için bekleme süresi, dataset ortalamasıyla karşılaştırma ve outcome (Kabul/Red/Tamamlandı) bilgisi gösteriliyor.
+- En uzun bekleme yaratan adım ⚠ uyarı işaretiyle vurgulanıyor.
+- Backend'e `/api/case-detail` endpoint'i eklendi: token hesabı, adım dizisi, en uzun bekleme, yüzdelik dilim hesabı döndürüyor.
+
+**AI Chat Widget (Gemini Entegrasyonu):**
+- Sağ alt köşede sabit konumlu AI asistan butonu eklendi.
+- Google Gemini API (`gemini-2.5-flash`) ile sohbet desteği kuruldu; backend `/api/chat` endpoint'i üzerinden çalışıyor.
+- Sohbet geçmişi (multi-turn) destekleniyor; analiz bağlamı metin olarak eklenebiliyor.
+- Hızlı soru önerileri (suggestion chip) ile kullanıcı yönlendirmesi yapıldı.
+- Sistem prompt'u süreç madenciliği odaklı, emoji destekli kısa-madde formatında Türkçe yanıt verecek şekilde yapılandırıldı.
+
+**Dashboard ve Performans İyileştirmeleri:**
+- "Platform Hakkında" sekmesi kaldırıldı; yerini daha işlevsel sekmelere bıraktı.
+- Sidebar ve header görseli iyileştirildi.
+- Tez yazımı için ekran görüntüleri ve sonuç verileri toplandı.
+
+**Plana göre durumum:**
+- 8. hafta hedefleri tamamlandı. Dashboard'a case inceleme ve yapay zeka asistan özellikleri eklenerek platform işlevselliği önemli ölçüde artırıldı.
+
+**Karşılaştığım sorunlar / zorluklar:**
+- Gemini API modellerinde sürüm uyumsuzlukları yaşandı (`NOT_FOUND` hataları). Backend'de `gemini-2.5-flash-preview` → `gemini-2.5-flash` → `gemini-1.5-flash` → `gemini-1.5-pro` sırasıyla fallback deneyen bir döngü yazılarak kararlı çalışma sağlandı.
+- pm4py token-based replay büyük log'larda uzun sürebiliyordu; case limit parametresiyle kontrol altına alındı.
+
+**Gelecek hafta hedefim:**
+- Platformu BPI 2012 bağımlılığından kurtararak farklı veri kümeleriyle çalışabilir hale getirmek.
+- D365 Finance satın alma süreci için gerçekçi dummy veri seti oluşturmak ve Supabase'e yüklemek.
+- Frontend'e dinamik veri kaynağı seçici eklemek.
 
 ---
 

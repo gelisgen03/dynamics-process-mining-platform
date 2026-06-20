@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../api/client";
+import { useDataSource } from "../context/DataSourceContext";
 import "./SettingsTab.css";
 
 const WEIGHTS = [
@@ -34,10 +35,20 @@ const ALGORITHMS = [
 ];
 
 export default function SettingsTab() {
-  const [health, setHealth] = useState(null);
+  const { source, tableName } = useDataSource();
+  const [health, setHealth]   = useState(null);
   const [checking, setChecking] = useState(false);
+  const [dbCount, setDbCount]   = useState(null);
+  const [aiStatus, setAiStatus] = useState(null);
 
   useEffect(() => { checkHealth(); }, []);
+
+  useEffect(() => {
+    setDbCount(null);
+    apiClient.getDataCount(tableName)
+      .then((r) => setDbCount(r.count))
+      .catch(() => setDbCount("—"));
+  }, [tableName]);
 
   const checkHealth = async () => {
     setChecking(true);
@@ -46,6 +57,11 @@ export default function SettingsTab() {
       setHealth({ ok: true, message: res.message });
     } catch {
       setHealth({ ok: false, message: "Backend'e bağlanılamadı" });
+    }
+    try {
+      setAiStatus(await apiClient.appInsightsStatus());
+    } catch {
+      setAiStatus({ configured: false, message: "App Insights durumu alınamadı" });
     } finally {
       setChecking(false);
     }
@@ -54,96 +70,97 @@ export default function SettingsTab() {
   return (
     <div className="settingsTab">
 
-      {/* Bağlantı Durumu */}
-      <div className="sectionCard">
-        <div className="sectionHeader">
-          <h3 className="sectionTitle">Sistem Durumu</h3>
-          <button className="btnCheck" onClick={checkHealth} disabled={checking}>
-            {checking ? "Kontrol ediliyor..." : "Yenile"}
-          </button>
-        </div>
-        <div className="statusRow">
-          <div className={`statusDot ${health?.ok ? "ok" : "fail"}`} />
-          <div className="statusInfo">
-            <div className="statusName">FastAPI Backend</div>
-            <div className="statusDetail">http://localhost:8000</div>
-          </div>
-          <div className={`statusBadge ${health?.ok ? "ok" : "fail"}`}>
-            {checking ? "..." : health?.ok ? "Çevrimiçi" : "Bağlantı Yok"}
-          </div>
-        </div>
-        <div className="statusRow">
-          <div className="statusDot ok" />
-          <div className="statusInfo">
-            <div className="statusName">Supabase (PostgreSQL)</div>
-            <div className="statusDetail">BPI Challenge 2012 — 262K kayıt</div>
-          </div>
-          <div className="statusBadge ok">Bağlı</div>
-        </div>
-        <div className="statusRow">
-          <div className="statusDot ok" />
-          <div className="statusInfo">
-            <div className="statusName">pm4py Kütüphanesi</div>
-            <div className="statusDetail">Process Mining for Python</div>
-          </div>
-          <div className="statusBadge ok">Aktif</div>
-        </div>
-      </div>
+      {/* Bağlantı Durumu — iki kaynak */}
+      <div className="statusGrid">
 
-      {/* Metrik Ağırlıkları */}
-      <div className="sectionCard">
-        <h3 className="sectionTitle">Model Kalite Metrik Ağırlıkları</h3>
-        <p className="sectionHint">
-          Genel model skoru (0–100) bu dört metriğin ağırlıklı ortalamasıdır.
-        </p>
-        <div className="weightList">
-          {WEIGHTS.map((w) => (
-            <div className="weightRow" key={w.key}>
-              <div className="weightLabel" style={{ color: w.color }}>{w.label}</div>
-              <div className="weightBarWrap">
-                <div
-                  className="weightBar"
-                  style={{ width: `${w.pct}%`, backgroundColor: w.color }}
-                />
-              </div>
-              <div className="weightPct" style={{ color: w.color }}>{w.pct}%</div>
-              <div className="weightDesc">{w.desc}</div>
+        {/* Statik veri kaynağı: Supabase */}
+        <div className="sectionCard">
+          <div className="sectionHeader">
+            <div className="sectionTitleWrap">
+              <span className="supabaseBadge">
+                <img src="/supabase.png" alt="Supabase" />
+              </span>
+              <h3 className="sectionTitle">Sistem Durumu · Supabase  (D365 dummy)</h3>
             </div>
-          ))}
-        </div>
-        <div className="formulaBox">
-          <code>
-            Skor = Fitness×0.40 + Precision×0.30 + Generalization×0.20 + Simplicity×0.10
-          </code>
-        </div>
-      </div>
-
-      {/* Algoritma Bilgisi */}
-      <div className="sectionCard">
-        <h3 className="sectionTitle">Algoritma Karşılaştırması</h3>
-        <div className="algoGrid">
-          {ALGORITHMS.map((a) => (
-            <div className="algoCard" key={a.tag} style={{ borderTopColor: a.color }}>
-              <div className="algoName" style={{ color: a.color }}>{a.name}</div>
-              <div className="algoSection">
-                <div className="algoSectionTitle">Güçlü Yönler</div>
-                <ul>
-                  {a.strengths.map((s, i) => (
-                    <li key={i} className="strengthItem">✓ {s}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="algoSection">
-                <div className="algoSectionTitle">Zayıf Yönler</div>
-                <ul>
-                  {a.weaknesses.map((w, i) => (
-                    <li key={i} className="weakItem">✗ {w}</li>
-                  ))}
-                </ul>
+            <button className="btnCheck" onClick={checkHealth} disabled={checking}>
+              {checking ? "Kontrol ediliyor..." : "Yenile"}
+            </button>
+          </div>
+          <div className="statusRow">
+            <div className={`statusDot ${health?.ok ? "ok" : "fail"}`} />
+            <div className="statusInfo">
+              <div className="statusName">FastAPI Backend</div>
+              <div className="statusDetail">http://localhost:8000</div>
+            </div>
+            <div className={`statusBadge ${health?.ok ? "ok" : "fail"}`}>
+              {checking ? "..." : health?.ok ? "Çevrimiçi" : "Bağlantı Yok"}
+            </div>
+          </div>
+          <div className="statusRow">
+            <div className="statusDot ok" />
+            <div className="statusInfo">
+              <div className="statusName">Supabase (PostgreSQL)</div>
+              <div className="statusDetail">
+                {source.label} — {dbCount !== null ? Number(dbCount).toLocaleString("tr-TR") + " kayıt" : "yükleniyor…"}
               </div>
             </div>
-          ))}
+            <div className="statusBadge ok">Bağlı</div>
+          </div>
+          <div className="statusRow">
+            <div className="statusDot ok" />
+            <div className="statusInfo">
+              <div className="statusName">pm4py Kütüphanesi</div>
+              <div className="statusDetail">Process Mining for Python</div>
+            </div>
+            <div className="statusBadge ok">Aktif</div>
+          </div>
         </div>
+
+        {/* Canlı veri kaynağı: Azure (D365) */}
+        <div className="sectionCard">
+          <div className="sectionHeader">
+            <div className="sectionTitleWrap">
+              <span className="balsoftBadge">
+                <img src="/balsoft-logo-light.svg" alt="BalSoft" />
+              </span>
+              <h3 className="sectionTitle">Sistem Durumu · D365 F&amp;O Azure DB</h3>
+            </div>
+            <button className="btnCheck" onClick={checkHealth} disabled={checking}>
+              {checking ? "Kontrol ediliyor..." : "Yenile"}
+            </button>
+          </div>
+          <div className="statusRow">
+            <div className={`statusDot ${aiStatus?.configured ? "ok" : "fail"}`} />
+            <div className="statusInfo">
+              <div className="statusName">Azure Application Insights</div>
+              <div className="statusDetail">
+                {aiStatus?.app_id_masked ? `App ID: ${aiStatus.app_id_masked}` : "Application Insights telemetri"}
+              </div>
+            </div>
+            <div className={`statusBadge ${aiStatus?.configured ? "ok" : "fail"}`}>
+              {checking ? "..." : aiStatus?.configured ? "Bağlı" : "Yapılandırılmadı"}
+            </div>
+          </div>
+          <div className="statusRow">
+            <div className="statusDot ok" />
+            <div className="statusInfo">
+              <div className="statusName">D365 Finance &amp; Operations</div>
+              <div className="statusDetail">customEvents / pageViews tabloları</div>
+            </div>
+            <div className={`statusBadge ${aiStatus?.configured ? "ok" : "fail"}`}>
+              {aiStatus?.configured ? "Canlı" : "Beklemede"}
+            </div>
+          </div>
+          <div className="statusRow">
+            <div className="statusDot ok" />
+            <div className="statusInfo">
+              <div className="statusName">KQL Sorgu Motoru</div>
+              <div className="statusDetail">Kusto — canlı varyant / performans / keşif</div>
+            </div>
+            <div className="statusBadge ok">Aktif</div>
+          </div>
+        </div>
+
       </div>
 
       {/* Proje Bilgisi */}
@@ -152,7 +169,7 @@ export default function SettingsTab() {
         <div className="projectInfo">
           <div className="projectRow">
             <span className="projectKey">Proje Başlığı</span>
-            <span className="projectVal">Microsoft Dynamics 365 Entegrasyonlu Süreç Madenciliği Tabanlı İş Süreci Analiz Platformu</span>
+            <span className="projectVal">Microsoft Dynamics 365 Destekli Süreç Madenciliği Tabanlı İş Süreci Analiz Platformu</span>
           </div>
           <div className="projectRow">
             <span className="projectKey">Öğrenci</span>
@@ -163,12 +180,12 @@ export default function SettingsTab() {
             <span className="projectVal">Prof. Dr. Turgay Tugay Bilgin</span>
           </div>
           <div className="projectRow">
-            <span className="projectKey">Veri Seti</span>
-            <span className="projectVal">BPI Challenge 2012 — Hollanda bankası kredi başvurusu süreci</span>
+            <span className="projectKey">Veri Kaynakları</span>
+            <span className="projectVal">Statik: BPI Challenge 2012 (benchmark) · D365 Dummy Data (Supabase) — Canlı: Azure Application Insights (D365 F&amp;O, BalSoft)</span>
           </div>
           <div className="projectRow">
             <span className="projectKey">Teknolojiler</span>
-            <span className="projectVal">Python · FastAPI · pm4py · React · Supabase · Graphviz</span>
+            <span className="projectVal">Python · FastAPI · pm4py · React 19 · Supabase · Azure Application Insights (KQL) · Graphviz · Google Gemini</span>
           </div>
         </div>
       </div>

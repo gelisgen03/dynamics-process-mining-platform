@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { apiClient } from "../api/client";
 import CaseSelector from "../components/CaseSelector";
+import { useDataSource } from "../context/DataSourceContext";
 import "./VariantTab.css";
 
 function getActivityColor(activity) {
@@ -55,8 +56,9 @@ function VariantCard({ v, maxFreq, isOpen, onToggle }) {
 }
 
 export default function VariantTab() {
+  const { tableName } = useDataSource();
   const [outcome, setOutcome]     = useState("all");
-  const [caseLimit, setCaseLimit] = useState(500);
+  const [caseLimit, setCaseLimit] = useState(100);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState(null);
   const [result, setResult]       = useState(null);
@@ -67,7 +69,7 @@ export default function VariantTab() {
     setError(null);
     setResult(null);
     try {
-      const res = await apiClient.getVariants(outcome, caseLimit);
+      const res = await apiClient.getVariants(outcome, caseLimit, tableName);
       setResult(res);
     } catch (err) {
       setError(err.message || "Varyant analizi başarısız");

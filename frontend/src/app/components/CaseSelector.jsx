@@ -1,4 +1,5 @@
 import "./CaseSelector.css";
+import { useDataSource } from "../context/DataSourceContext";
 
 const OUTCOME_OPTIONS = [
   { value: "all",      label: "Tüm Case'ler" },
@@ -19,24 +20,28 @@ export default function CaseSelector({
   onCaseLimitChange,
   disabled = false,
 }) {
+  const { tableName } = useDataSource();
+  const isBpi = tableName === "event_log_data";
   const style = OUTCOME_STYLE[outcome] ?? OUTCOME_STYLE.all;
   const label = OUTCOME_OPTIONS.find((o) => o.value === outcome)?.label ?? "";
 
   return (
     <>
-      <label className="caseField">
-        <span className="caseLabel">Sonuç Filtresi</span>
-        <select
-          className="caseSelect"
-          value={outcome}
-          onChange={(e) => onOutcomeChange(e.target.value)}
-          disabled={disabled}
-        >
-          {OUTCOME_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-      </label>
+      {isBpi && (
+        <label className="caseField">
+          <span className="caseLabel">Sonuç Filtresi</span>
+          <select
+            className="caseSelect"
+            value={outcome}
+            onChange={(e) => onOutcomeChange(e.target.value)}
+            disabled={disabled}
+          >
+            {OUTCOME_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label className="caseField">
         <span className="caseLabel">Case Sayısı</span>
@@ -60,7 +65,7 @@ export default function CaseSelector({
       >
         <span className="previewCount">{caseLimit.toLocaleString("tr-TR")}</span>
         <span className="previewUnit"> Case işlenecek</span>
-        {outcome !== "all" && (
+        {isBpi && outcome !== "all" && (
           <span className="previewTotal"> · {label.toLowerCase()}</span>
         )}
       </div>

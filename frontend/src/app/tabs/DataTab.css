@@ -4,6 +4,74 @@
   gap: var(--sp-20);
 }
 
+/* ── HEADER ────────────────────────────────────────────────────────── */
+.dataHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-12);
+  padding: var(--sp-20) var(--sp-24);
+  box-shadow: var(--shadow-2);
+}
+.dataHeaderLeft { display: flex; align-items: center; gap: 16px; }
+.dataBadge {
+  font-size: 12px; font-weight: 700; color: #fff;
+  background: var(--primary); border-radius: 6px;
+  padding: 4px 10px; letter-spacing: 0.5px;
+}
+.dataTitle { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.dataSub   { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.dataTableName { font-size: 12px; color: var(--text-secondary); }
+.dataTableName code {
+  background: var(--bg-surface2); border: 1px solid var(--border-light);
+  border-radius: 4px; padding: 2px 6px; font-family: monospace;
+}
+
+/* ── STATS GRID ────────────────────────────────────────────────────── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--sp-16);
+}
+.statCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-8);
+  padding: var(--sp-16);
+  box-shadow: var(--shadow-2);
+}
+.statValue { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.statLabel { font-size: 13px; color: var(--text-primary); margin-top: 4px; font-weight: 500; }
+.statSub   { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+/* ── SAMPLE TABLE ──────────────────────────────────────────────────── */
+.sampleSection {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-12);
+  padding: var(--sp-20) var(--sp-24);
+  box-shadow: var(--shadow-2);
+}
+.sampleTitle { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--sp-16); }
+.sampleTableWrap { overflow-x: auto; }
+.sampleTable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sampleTable th {
+  background: var(--bg-surface2); color: var(--text-secondary);
+  text-align: left; padding: 8px 12px;
+  border-bottom: 1px solid var(--border-light); font-weight: 600;
+}
+.sampleTable td {
+  padding: 8px 12px; border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary); font-family: monospace; font-size: 12px;
+}
+.sampleTable tr:hover td { background: var(--primary-xlight); }
+
+/* ── STATES ────────────────────────────────────────────────────────── */
+.dataLoading { color: var(--text-secondary); padding: var(--sp-32); text-align: center; }
+.dataError   { background: #fff0f0; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px 16px; color: #b91c1c; font-size: 13px; }
+
 /* ── INTRO BANNER ─────────────────────────────────────────────────── */
 .introBanner {
   background: linear-gradient(135deg, #f0f8ff 0%, #eff6fc 60%, #fff 100%);

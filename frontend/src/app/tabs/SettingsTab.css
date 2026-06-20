@@ -11,6 +11,64 @@
   padding: var(--space-lg);
 }
 
+/* İki kaynaklı sistem durumu */
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-lg);
+}
+
+.statusCardHint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: calc(-1 * var(--space-sm)) 0 var(--space-lg);
+}
+
+/* BalSoft marka rozeti (beyaz logo → koyu zemin) */
+.sectionTitleWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.balsoftBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 10px;
+  background: var(--sidebar-bg, #0F1B2D);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-2, 6px);
+  flex-shrink: 0;
+}
+
+.balsoftBadge img {
+  height: 16px;
+  width: auto;
+  display: block;
+}
+
+/* Supabase rozeti (renkli logo + koyu yazı → açık zemin) */
+.supabaseBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 10px;
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-2, 6px);
+  flex-shrink: 0;
+}
+
+.supabaseBadge img {
+  height: 16px;
+  width: auto;
+  display: block;
+}
+
 .sectionHeader {
   display: flex;
   align-items: center;
