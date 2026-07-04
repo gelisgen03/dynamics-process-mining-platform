@@ -163,33 +163,6 @@ export default function SettingsTab() {
 
       </div>
 
-      {/* Proje Bilgisi */}
-      <div className="sectionCard">
-        <h3 className="sectionTitle">Proje Hakkında</h3>
-        <div className="projectInfo">
-          <div className="projectRow">
-            <span className="projectKey">Proje Başlığı</span>
-            <span className="projectVal">Microsoft Dynamics 365 Destekli Süreç Madenciliği Tabanlı İş Süreci Analiz Platformu</span>
-          </div>
-          <div className="projectRow">
-            <span className="projectKey">Öğrenci</span>
-            <span className="projectVal">Süleyman Asım Gelişgen</span>
-          </div>
-          <div className="projectRow">
-            <span className="projectKey">Danışman</span>
-            <span className="projectVal">Prof. Dr. Turgay Tugay Bilgin</span>
-          </div>
-          <div className="projectRow">
-            <span className="projectKey">Veri Kaynakları</span>
-            <span className="projectVal">Statik: BPI Challenge 2012 (benchmark) · D365 Dummy Data (Supabase) — Canlı: Azure Application Insights (D365 F&amp;O, BalSoft)</span>
-          </div>
-          <div className="projectRow">
-            <span className="projectKey">Teknolojiler</span>
-            <span className="projectVal">Python · FastAPI · pm4py · React 19 · Supabase · Azure Application Insights (KQL) · Graphviz · Google Gemini</span>
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }

@@ -32,6 +32,15 @@ const METRICS = [
 
 const DAYS_OPTIONS = [7, 14, 30];
 
+const TR_MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+function dateRangeTR(days) {
+  const to = new Date();
+  const from = new Date(to);
+  from.setDate(to.getDate() - days);
+  const fmt2 = (d) => `${d.getDate()} ${TR_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return `${fmt2(from)} – ${fmt2(to)}`;
+}
+
 const fmt = (n) => (n ?? 0).toLocaleString("tr-TR");
 const day = (iso) => (iso ? String(iso).slice(0, 10) : "—");
 const fmtMs = (ms) => (ms >= 1000 ? `${(ms / 1000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} sn` : `${Math.round(ms)} ms`);
@@ -271,6 +280,10 @@ export default function AppInsightsTab() {
               {DAYS_OPTIONS.map((d) => <option key={d} value={d}>Son {d} gün</option>)}
             </select>
           </label>
+          <div className="aiDateRangeBadge">
+            
+            <span className="aiDateRangeText">{dateRangeTR(days)}</span>
+          </div>
         </div>
         {activeProc && <p className="aiControlNote">{activeProc.description}</p>}
       </section>
